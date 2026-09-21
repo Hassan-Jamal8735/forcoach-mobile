@@ -13,6 +13,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { CalendarStackParamList } from "../navigation/types";
 import { listEvents, type Event } from "../lib/api/events";
 import { listStudios, type Studio } from "../lib/api/studios";
+import { colors } from "../theme/colors";
 
 type Props = NativeStackScreenProps<CalendarStackParamList, "CalendarList">;
 
@@ -67,7 +68,7 @@ export function CalendarScreen({ navigation }: Props) {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator />
+        <ActivityIndicator color={colors.accent} />
       </View>
     );
   }
@@ -128,36 +129,36 @@ export function CalendarScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+  container: { flex: 1, backgroundColor: colors.background },
   centered: { flex: 1, alignItems: "center", justifyContent: "center" },
   errorBanner: {
-    backgroundColor: "#fee2e2",
+    backgroundColor: colors.destructiveMuted,
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
-  errorText: { color: "#991b1b", fontSize: 13 },
+  errorText: { color: colors.destructiveText, fontSize: 13 },
   emptyContainer: { flex: 1 },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  emptyTitle: { fontSize: 16, fontWeight: "600", marginBottom: 4 },
-  emptySubtitle: { fontSize: 13, color: "#6b7280", textAlign: "center" },
+  emptyTitle: { fontSize: 16, fontWeight: "600", marginBottom: 4, color: colors.foreground },
+  emptySubtitle: { fontSize: 13, color: colors.mutedForeground, textAlign: "center" },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.card,
     marginHorizontal: 16,
     marginTop: 12,
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#f3f4f6",
+    borderColor: colors.border,
   },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
   },
-  cardTitle: { fontSize: 15, fontWeight: "600", flexShrink: 1 },
-  cardStudio: { fontSize: 12, color: "#7c3aed", fontWeight: "500" },
-  cardDay: { fontSize: 13, color: "#374151", marginTop: 6 },
-  cardTime: { fontSize: 13, color: "#6b7280", marginTop: 2 },
+  cardTitle: { fontSize: 15, fontWeight: "600", flexShrink: 1, color: colors.foreground },
+  cardStudio: { fontSize: 12, color: colors.accent, fontWeight: "500" },
+  cardDay: { fontSize: 13, color: colors.foreground, marginTop: 6 },
+  cardTime: { fontSize: 13, color: colors.mutedForeground, marginTop: 2 },
   fab: {
     position: "absolute",
     right: 20,
@@ -165,7 +166,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#111827",
+    backgroundColor: colors.accent,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -174,5 +175,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
-  fabText: { color: "#fff", fontSize: 28, lineHeight: 30 },
+  fabText: { color: colors.accentForeground, fontSize: 28, lineHeight: 30 },
 });

@@ -1,5 +1,6 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/colors";
 
 export function SettingsScreen() {
   const { session, signOut } = useAuth();
@@ -17,17 +18,17 @@ export function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb", padding: 20 },
-  label: { fontSize: 13, color: "#6b7280", marginTop: 12 },
-  email: { fontSize: 16, fontWeight: "600", marginTop: 4 },
+  container: { flex: 1, backgroundColor: colors.background, padding: 20 },
+  label: { fontSize: 13, color: colors.mutedForeground, marginTop: 12 },
+  email: { fontSize: 16, fontWeight: "600", marginTop: 4, color: colors.foreground },
   button: {
     marginTop: 32,
-    backgroundColor: "#fff",
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: colors.border,
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: "center",
   },
-  buttonText: { color: "#dc2626", fontSize: 15, fontWeight: "600" },
+  buttonText: { color: colors.destructive, fontSize: 15, fontWeight: "600" },
 });

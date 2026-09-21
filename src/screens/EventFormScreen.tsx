@@ -15,6 +15,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { CalendarStackParamList } from "../navigation/types";
 import { createEvent, deleteEvent, updateEvent } from "../lib/api/events";
 import { listStudios, type Studio } from "../lib/api/studios";
+import { colors } from "../theme/colors";
 
 type Props = NativeStackScreenProps<CalendarStackParamList, "EventForm">;
 
@@ -199,38 +200,41 @@ export function EventFormScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 20, paddingBottom: 40 },
-  label: { fontSize: 13, fontWeight: "600", color: "#374151", marginTop: 16, marginBottom: 6 },
+  label: { fontSize: 13, fontWeight: "600", color: colors.mutedForeground, marginTop: 16, marginBottom: 6 },
   input: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: colors.border,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
+    backgroundColor: colors.card,
+    color: colors.foreground,
   },
   notesInput: { minHeight: 80, textAlignVertical: "top" },
-  pickerWrap: { borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10 },
+  pickerWrap: { borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: colors.card },
   row: { flexDirection: "row", gap: 10 },
   dateBtn: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: colors.border,
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: "center",
+    backgroundColor: colors.card,
   },
-  error: { color: "#dc2626", fontSize: 13, marginTop: 16 },
+  error: { color: colors.destructiveText, fontSize: 13, marginTop: 16 },
   saveBtn: {
-    backgroundColor: "#111827",
+    backgroundColor: colors.accent,
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 24,
   },
   disabled: { opacity: 0.6 },
-  saveText: { color: "#fff", fontSize: 15, fontWeight: "600" },
+  saveText: { color: colors.accentForeground, fontSize: 15, fontWeight: "600" },
   deleteBtn: { alignItems: "center", marginTop: 16, paddingVertical: 8 },
-  deleteText: { color: "#dc2626", fontSize: 14, fontWeight: "500" },
+  deleteText: { color: colors.destructive, fontSize: 14, fontWeight: "500" },
 });

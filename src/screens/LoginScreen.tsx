@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -10,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../theme/colors";
 
 export function LoginScreen() {
   const { signIn } = useAuth();
@@ -31,6 +33,11 @@ export function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
+      <Image
+        source={require("../../assets/brand-logo.png")}
+        style={styles.logoImage}
+        resizeMode="contain"
+      />
       <Text style={styles.logo}>FORCOACH</Text>
       <Text style={styles.subtitle}>Log in to your coaching account</Text>
 
@@ -58,7 +65,7 @@ export function LoginScreen() {
         disabled={submitting}
       >
         {submitting ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={colors.accentForeground} />
         ) : (
           <Text style={styles.buttonText}>Log in</Text>
         )}
@@ -72,36 +79,45 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     paddingHorizontal: 24,
-    backgroundColor: "#fff",
+    backgroundColor: colors.background,
+  },
+  logoImage: {
+    width: 56,
+    height: 56,
+    alignSelf: "center",
+    marginBottom: 12,
   },
   logo: {
     fontSize: 28,
     fontWeight: "700",
     textAlign: "center",
     marginBottom: 4,
+    color: colors.foreground,
   },
   subtitle: {
     fontSize: 14,
-    color: "#6b7280",
+    color: colors.mutedForeground,
     textAlign: "center",
     marginBottom: 32,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: colors.border,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
     marginBottom: 12,
+    backgroundColor: colors.card,
+    color: colors.foreground,
   },
   error: {
-    color: "#dc2626",
+    color: colors.destructiveText,
     fontSize: 13,
     marginBottom: 12,
   },
   button: {
-    backgroundColor: "#111827",
+    backgroundColor: colors.accent,
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: "center",
@@ -111,7 +127,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   buttonText: {
-    color: "#fff",
+    color: colors.accentForeground,
     fontSize: 15,
     fontWeight: "600",
   },
