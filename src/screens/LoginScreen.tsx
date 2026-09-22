@@ -10,13 +10,18 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { AuthStackParamList } from "../navigation/auth-types";
 import { useAuth } from "../context/AuthContext";
 import { colors } from "../theme/colors";
 
-export function LoginScreen() {
+type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
+
+export function LoginScreen({ navigation }: Props) {
   const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -49,13 +54,25 @@ export function LoginScreen() {
         value={email}
         onChangeText={setEmail}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+      <View style={styles.passwordWrap}>
+        <TextInput
+          style={styles.passwordInput}
+          placeholder="Password"
+          secureTextEntry={!showPassword}
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TouchableOpacity onPress={() => setShowPassword((v) => !v)} hitSlop={8}>
+          <Text style={styles.showHide}>{showPassword ? "Hide" : "Show"}</Text>
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity
+        style={styles.forgotLink}
+        onPress={() => navigation.navigate("ForgotPassword")}
+      >
+        <Text style={styles.forgotText}>Forgot password?</Text>
+      </TouchableOpacity>
 
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -69,6 +86,15 @@ export function LoginScreen() {
         ) : (
           <Text style={styles.buttonText}>Log in</Text>
         )}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.signupLink}
+        onPress={() => navigation.navigate("Register")}
+      >
+        <Text style={styles.signupText}>
+          Don't have an account? <Text style={styles.signupTextBold}>Sign up</Text>
+        </Text>
       </TouchableOpacity>
     </KeyboardAvoidingView>
   );
@@ -111,17 +137,37 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     color: colors.foreground,
   },
+  passwordWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    backgroundColor: colors.card,
+    paddingRight: 14,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: colors.foreground,
+  },
+  showHide: { fontSize: 13, fontWeight: "600", color: colors.accent },
+  forgotLink: { alignSelf: "flex-end", marginTop: 8, marginBottom: 4 },
+  forgotText: { fontSize: 13, color: colors.accent, fontWeight: "500" },
   error: {
     color: colors.destructiveText,
     fontSize: 13,
-    marginBottom: 12,
+    marginTop: 8,
+    marginBottom: 4,
   },
   button: {
     backgroundColor: colors.accent,
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 16,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -131,4 +177,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
   },
+  signupLink: { alignItems: "center", marginTop: 20 },
+  signupText: { fontSize: 13, color: colors.mutedForeground },
+  signupTextBold: { color: colors.accent, fontWeight: "600" },
 });

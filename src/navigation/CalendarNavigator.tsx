@@ -18,7 +18,7 @@ export function CalendarNavigator() {
       <Stack.Screen
         name="CalendarList"
         component={CalendarScreen}
-        options={{ title: "Calendar" }}
+        options={{ title: "Schedule" }}
       />
       <Stack.Screen name="EventForm" component={EventFormScreen} />
     </Stack.Navigator>

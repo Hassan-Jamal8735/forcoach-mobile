@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { ActivityIndicator, View } from "react-native";
 import type { RootTabParamList } from "./types";
 import { useAuth } from "../context/AuthContext";
-import { LoginScreen } from "../screens/LoginScreen";
+import { AuthNavigator } from "./AuthNavigator";
 import { CalendarNavigator } from "./CalendarNavigator";
 import { EarningsScreen } from "../screens/EarningsScreen";
 import { InvoicesNavigator } from "./InvoicesNavigator";
@@ -100,7 +100,7 @@ export function RootNavigator() {
   if (!session) {
     return (
       <NavigationContainer theme={navigationTheme}>
-        <LoginScreen />
+        <AuthNavigator />
       </NavigationContainer>
     );
   }
