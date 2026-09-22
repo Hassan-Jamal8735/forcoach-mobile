@@ -2,12 +2,34 @@ import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useOnboarding } from "../../context/OnboardingContext";
 import { supabase } from "../../lib/supabase";
+import { listEvents } from "../../lib/api/events";
+import {
+  requestNotificationPermission,
+  scheduleClassReminders,
+  setNotificationsEnabled,
+} from "../../lib/notifications";
 import { colors } from "../../theme/colors";
 
 export function DoneScreen() {
   const { currency } = useOnboarding();
   const [finishing, setFinishing] = useState(false);
   const [notificationsChoiceMade, setNotificationsChoiceMade] = useState(false);
+  const [requestingPermission, setRequestingPermission] = useState(false);
+
+  async function handleEnableNotifications() {
+    setRequestingPermission(true);
+    try {
+      const granted = await requestNotificationPermission();
+      await setNotificationsEnabled(granted);
+      if (granted) {
+        const events = await listEvents();
+        await scheduleClassReminders(events);
+      }
+    } finally {
+      setRequestingPermission(false);
+      setNotificationsChoiceMade(true);
+    }
+  }
 
   async function finishOnboarding() {
     setFinishing(true);
@@ -40,9 +62,14 @@ export function DoneScreen() {
           </Text>
           <TouchableOpacity
             style={styles.enableBtn}
-            onPress={() => setNotificationsChoiceMade(true)}
+            onPress={handleEnableNotifications}
+            disabled={requestingPermission}
           >
-            <Text style={styles.enableBtnText}>Enable notifications</Text>
+            {requestingPermission ? (
+              <ActivityIndicator color={colors.offWhite} />
+            ) : (
+              <Text style={styles.enableBtnText}>Enable notifications</Text>
+            )}
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setNotificationsChoiceMade(true)}>
             <Text style={styles.maybeLater}>Maybe later</Text>

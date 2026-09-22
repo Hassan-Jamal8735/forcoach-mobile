@@ -13,6 +13,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { CalendarStackParamList } from "../navigation/types";
 import { listEvents, type Event } from "../lib/api/events";
 import { listStudios, type Studio } from "../lib/api/studios";
+import { scheduleClassReminders } from "../lib/notifications";
 import { colors, studioColor } from "../theme/colors";
 
 type Props = NativeStackScreenProps<CalendarStackParamList, "CalendarList">;
@@ -53,6 +54,7 @@ export function CalendarScreen({ navigation }: Props) {
       const [eventsData, studiosData] = await Promise.all([listEvents(), listStudios()]);
       setEvents(eventsData);
       setStudios(studiosData);
+      scheduleClassReminders(eventsData).catch(() => {});
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load your schedule");
     } finally {
