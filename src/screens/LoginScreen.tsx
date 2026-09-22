@@ -13,6 +13,7 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AuthStackParamList } from "../navigation/auth-types";
 import { useAuth } from "../context/AuthContext";
+import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { colors } from "../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
@@ -87,6 +88,14 @@ export function LoginScreen({ navigation }: Props) {
           <Text style={styles.buttonText}>Log in</Text>
         )}
       </TouchableOpacity>
+
+      <View style={styles.dividerRow}>
+        <View style={styles.dividerLine} />
+        <Text style={styles.dividerText}>or</Text>
+        <View style={styles.dividerLine} />
+      </View>
+
+      <GoogleSignInButton />
 
       <TouchableOpacity
         style={styles.signupLink}
@@ -180,4 +189,7 @@ const styles = StyleSheet.create({
   signupLink: { alignItems: "center", marginTop: 20 },
   signupText: { fontSize: 13, color: colors.mutedForeground },
   signupTextBold: { color: colors.accent, fontWeight: "600" },
+  dividerRow: { flexDirection: "row", alignItems: "center", marginVertical: 20, gap: 10 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { fontSize: 12, color: colors.mutedForeground },
 });

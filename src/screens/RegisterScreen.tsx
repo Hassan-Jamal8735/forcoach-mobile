@@ -13,6 +13,7 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AuthStackParamList } from "../navigation/auth-types";
 import { supabase } from "../lib/supabase";
+import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { colors } from "../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Register">;
@@ -115,6 +116,14 @@ export function RegisterScreen({ navigation }: Props) {
           )}
         </TouchableOpacity>
 
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <GoogleSignInButton />
+
         <TouchableOpacity style={styles.loginLink} onPress={() => navigation.navigate("Login")}>
           <Text style={styles.loginText}>
             Already have an account? <Text style={styles.loginTextBold}>Log in</Text>
@@ -162,6 +171,9 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: colors.accentForeground, fontSize: 15, fontWeight: "600" },
+  dividerRow: { flexDirection: "row", alignItems: "center", marginTop: 20, gap: 10 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { fontSize: 12, color: colors.mutedForeground },
   loginLink: { alignItems: "center", marginTop: 20 },
   loginText: { fontSize: 13, color: colors.mutedForeground },
   loginTextBold: { color: colors.accent, fontWeight: "600" },
