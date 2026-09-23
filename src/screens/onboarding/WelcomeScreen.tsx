@@ -1,9 +1,10 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { OnboardingStackParamList } from "../../navigation/onboarding-types";
 import { Button } from "../../components/ui";
+import { BrandLogo } from "../../components/BrandLogo";
 import { colors } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "Welcome">;
@@ -18,9 +19,7 @@ export function WelcomeScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <View style={styles.top}>
-        <Image source={require("../../../assets/brand-mark.png")} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.wordmark}>FORCOACH</Text>
-        <Text style={styles.tagline}>MANAGE · GROW · INSPIRE</Text>
+        <BrandLogo size="lg" />
       </View>
 
       <View style={styles.bottom}>
@@ -45,9 +44,6 @@ export function WelcomeScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   top: { flex: 1, alignItems: "center", justifyContent: "center" },
-  logo: { width: 132, height: 97, marginBottom: 20 },
-  wordmark: { fontSize: 24, fontWeight: "800", letterSpacing: 4, color: colors.foreground },
-  tagline: { fontSize: 11, letterSpacing: 2, color: colors.mutedForeground, marginTop: 6 },
   bottom: { paddingHorizontal: 24, paddingBottom: 16 },
   title: { fontSize: 30, fontWeight: "800", color: colors.foreground, letterSpacing: -0.5 },
   subtitle: { fontSize: 15, color: colors.mutedForeground, marginTop: 8 },

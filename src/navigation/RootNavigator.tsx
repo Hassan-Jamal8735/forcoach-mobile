@@ -14,6 +14,7 @@ import { OnboardingNavigator } from "./OnboardingNavigator";
 import { supabase } from "../lib/supabase";
 import { listStudios } from "../lib/api/studios";
 import { colors } from "../theme/colors";
+import { BrandLogo } from "../components/BrandLogo";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
@@ -86,14 +87,8 @@ function AppTabs() {
 
 function Loading() {
   return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: colors.background,
-      }}
-    >
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background, gap: 36 }}>
+      <BrandLogo size="lg" />
       <ActivityIndicator color={colors.accent} />
     </View>
   );

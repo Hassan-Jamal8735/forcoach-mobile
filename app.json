@@ -36,7 +36,7 @@
         {
           "image": "./assets/splash-icon.png",
           "backgroundColor": "#f7f6f4",
-          "imageWidth": 220
+          "imageWidth": 150
         }
       ],
       "expo-web-browser",
