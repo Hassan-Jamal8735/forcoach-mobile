@@ -1,18 +1,11 @@
-import { useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Linking,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { useEffect, useState } from "react";
+import { Linking, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { OnboardingStackParamList } from "../../navigation/onboarding-types";
-import { Ionicons } from "@expo/vector-icons";
-import { OnboardingHeader } from "../../components/OnboardingHeader";
-import { createCheckoutSession, type Plan } from "../../lib/api/billing";
+import { OnboardingLayout } from "../../components/OnboardingLayout";
+import { createCheckoutSession, getBillingStatus, type Plan } from "../../lib/api/billing";
+import { Banner, Button, Segmented } from "../../components/ui";
 import { colors } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "ChoosePlan">;
@@ -28,111 +21,93 @@ const FEATURES = [
 export function ChoosePlanScreen({ navigation }: Props) {
   const [plan, setPlan] = useState<Plan>("monthly");
   const [loading, setLoading] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getBillingStatus()
+      .then((s) => setSubscribed(["active", "trialing"].includes(s.status)))
+      .catch(() => {});
+  }, []);
 
   async function handleStartTrial() {
     setLoading(true);
+    setError(null);
     try {
       const { url } = await createCheckoutSession(plan);
       await Linking.openURL(url);
       navigation.navigate("Done");
-    } catch (err) {
-      Alert.alert(
-        "Couldn't start checkout",
-        err instanceof Error ? err.message : "Please try again from Settings later.",
-      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't start checkout — you can do this later from Settings.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <View style={styles.container}>
-      <OnboardingHeader step={5} onBack={() => navigation.goBack()} />
-      <View style={styles.content}>
-        <Text style={styles.title}>Choose your plan</Text>
-        <Text style={styles.subtitle}>Start your 15-day free trial. Cancel anytime.</Text>
+    <OnboardingLayout
+      step={5}
+      onBack={() => navigation.goBack()}
+      title="Choose your plan"
+      subtitle="Start your 15-day free trial. Cancel anytime."
+      footer={
+        subscribed ? (
+          <Button title="Next" icon="arrow-forward" variant="dark" onPress={() => navigation.navigate("Done")} />
+        ) : (
+          <>
+            <Button title="Start free trial" icon="arrow-forward" variant="dark" onPress={handleStartTrial} loading={loading} />
+            <Button title="Decide later" variant="ghost" onPress={() => navigation.navigate("Done")} />
+          </>
+        )
+      }
+    >
+      {error && <Banner message={error} />}
+      {subscribed && <Banner tone="success" message="You're already subscribed — nothing to do here." />}
 
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Coach Plan</Text>
-            <Text style={styles.cardPrice}>
-              €{plan === "monthly" ? "9" : "108"} / {plan === "monthly" ? "month" : "year"}
-            </Text>
+      <View style={styles.card}>
+        <View style={styles.cardHead}>
+          <Text style={styles.cardTitle}>Coach Plan</Text>
+          <Text style={styles.price}>
+            €{plan === "monthly" ? "9" : "108"}
+            <Text style={styles.per}> / {plan === "monthly" ? "month" : "year"}</Text>
+          </Text>
+        </View>
+        {FEATURES.map((f) => (
+          <View key={f} style={styles.feature}>
+            <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
+            <Text style={styles.featureText}>{f}</Text>
           </View>
-          {FEATURES.map((f) => (
-            <View key={f} style={styles.featureRow}>
-              <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
-              <Text style={styles.featureText}>{f}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.toggleRow}>
-          <TouchableOpacity
-            style={[styles.toggleBtn, plan === "monthly" && styles.toggleBtnActive]}
-            onPress={() => setPlan("monthly")}
-          >
-            <Text style={[styles.toggleText, plan === "monthly" && styles.toggleTextActive]}>
-              Monthly
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.toggleBtn, plan === "yearly" && styles.toggleBtnActive]}
-            onPress={() => setPlan("yearly")}
-          >
-            <Text style={[styles.toggleText, plan === "yearly" && styles.toggleTextActive]}>
-              Yearly · Save 20%
-            </Text>
-          </TouchableOpacity>
-        </View>
+        ))}
       </View>
 
-      <TouchableOpacity style={styles.nextBtn} onPress={handleStartTrial} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color={colors.offWhite} />
-        ) : (
-          <Text style={styles.nextBtnText}>Start free trial  →</Text>
-        )}
-      </TouchableOpacity>
-    </View>
+      {!subscribed && (
+        <Segmented
+          options={[
+            { value: "monthly", label: "Monthly" },
+            { value: "yearly", label: "Yearly · save 20%" },
+          ]}
+          value={plan}
+          onChange={setPlan}
+        />
+      )}
+    </OnboardingLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { flex: 1, paddingHorizontal: 20 },
-  title: { fontSize: 24, fontWeight: "700", color: colors.foreground, marginTop: 12 },
-  subtitle: { fontSize: 14, color: colors.mutedForeground, marginTop: 8, marginBottom: 20 },
   card: {
-    backgroundColor: colors.accentLight,
-    borderRadius: 14,
-    borderWidth: 1,
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    borderWidth: 2,
     borderColor: colors.accent,
-    padding: 18,
+    padding: 20,
     marginBottom: 20,
+    gap: 10,
   },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: colors.foreground },
-  cardPrice: { fontSize: 15, fontWeight: "700", color: colors.accent },
-  featureRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
-  featureText: { fontSize: 13, color: colors.foreground },
-  toggleRow: { flexDirection: "row", backgroundColor: colors.secondary, borderRadius: 10, padding: 4, gap: 4 },
-  toggleBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: "center" },
-  toggleBtnActive: { backgroundColor: colors.card },
-  toggleText: { fontSize: 13, color: colors.mutedForeground, fontWeight: "600" },
-  toggleTextActive: { color: colors.foreground },
-  nextBtn: {
-    backgroundColor: colors.charcoal,
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginHorizontal: 20,
-    marginBottom: 24,
-  },
-  nextBtnText: { color: colors.offWhite, fontSize: 16, fontWeight: "600" },
+  cardHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 },
+  cardTitle: { fontSize: 18, fontWeight: "800", color: colors.foreground },
+  price: { fontSize: 22, fontWeight: "800", color: colors.accent },
+  per: { fontSize: 14, fontWeight: "600", color: colors.mutedForeground },
+  feature: { flexDirection: "row", alignItems: "center", gap: 10 },
+  featureText: { fontSize: 15, color: colors.foreground },
 });

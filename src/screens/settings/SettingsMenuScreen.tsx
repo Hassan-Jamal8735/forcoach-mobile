@@ -1,26 +1,20 @@
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Linking, StyleSheet, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { SettingsStackParamList } from "../../navigation/settings-types";
-import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../context/AuthContext";
-import { colors, cardShadow } from "../../theme/colors";
+import { supabase } from "../../lib/supabase";
+import { Avatar, Card, ListRow, Screen, ScreenHeader, SectionLabel, initials } from "../../components/ui";
+import { colors } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<SettingsStackParamList, "SettingsMenu">;
 
+const CURRENCY_LABEL: Record<string, string> = { EUR: "Euro (€)", USD: "US Dollar ($)", GBP: "Pound (£)" };
+
 export function SettingsMenuScreen({ navigation }: Props) {
   const { session, signOut } = useAuth();
-
-  const rows: { label: string; icon: keyof typeof Ionicons.glyphMap; onPress: () => void }[] = [
-    { label: "Profile", icon: "person-outline", onPress: () => navigation.navigate("Profile") },
-    {
-      label: "Studios & integrations",
-      icon: "link-outline",
-      onPress: () => (navigation.getParent() as { navigate: (name: string) => void } | undefined)?.navigate("Studios"),
-    },
-    { label: "Payment details", icon: "card-outline", onPress: () => navigation.navigate("PaymentDetails") },
-    { label: "Notifications", icon: "notifications-outline", onPress: () => navigation.navigate("Notifications") },
-    { label: "Currency", icon: "cash-outline", onPress: () => navigation.navigate("Currency") },
-  ];
+  const metadata = (session?.user.user_metadata ?? {}) as Record<string, unknown>;
+  const fullName = (metadata.full_name as string | undefined) || "Coach";
+  const currency = (metadata.currency as string | undefined) ?? "EUR";
 
   function handleLogOut() {
     Alert.alert("Log out", "Are you sure you want to log out?", [
@@ -29,69 +23,72 @@ export function SettingsMenuScreen({ navigation }: Props) {
     ]);
   }
 
+  function handleRerunSetup() {
+    Alert.alert("Run setup again", "Walk through the setup steps again? Your existing data stays as it is.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Start",
+        onPress: () => supabase.auth.updateUser({ data: { mobile_onboarding_completed: false } }),
+      },
+    ]);
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Settings</Text>
-      <Text style={styles.email}>{session?.user.email}</Text>
+    <Screen>
+      <ScreenHeader title="Settings" />
 
-      <View style={styles.card}>
-        {rows.map((row, i) => (
-          <TouchableOpacity
-            key={row.label}
-            style={[styles.row, i < rows.length - 1 && styles.rowBorder]}
-            onPress={row.onPress}
-          >
-            <View style={styles.rowIcon}>
-              <Ionicons name={row.icon} size={18} color={colors.accent} />
-            </View>
-            <Text style={styles.rowLabel}>{row.label}</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.mutedForeground} />
-          </TouchableOpacity>
-        ))}
-      </View>
+      <Card style={styles.profileCard}>
+        <Avatar label={initials(fullName)} color={colors.accent} size={52} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.name}>{fullName}</Text>
+          <Text style={styles.email}>{session?.user.email}</Text>
+        </View>
+      </Card>
 
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogOut}>
-        <Text style={styles.logoutText}>Log out</Text>
-      </TouchableOpacity>
-    </View>
+      <SectionLabel>Account</SectionLabel>
+      <Card padded={false}>
+        <ListRow icon="person-outline" label="Profile" onPress={() => navigation.navigate("Profile")} />
+        <ListRow icon="lock-closed-outline" label="Change password" onPress={() => navigation.navigate("ChangePassword")} />
+        <ListRow icon="sparkles-outline" label="Subscription" onPress={() => navigation.navigate("Subscription")} last />
+      </Card>
+
+      <SectionLabel>Business</SectionLabel>
+      <Card padded={false}>
+        <ListRow icon="business-outline" label="Studios" onPress={() => navigation.navigate("StudiosList")} />
+        <ListRow icon="sync-outline" label="Calendar sync & integrations" onPress={() => navigation.navigate("CalendarSync")} />
+        <ListRow icon="card-outline" label="Payment details" onPress={() => navigation.navigate("PaymentDetails")} />
+        <ListRow
+          icon="cash-outline"
+          label="Currency"
+          value={CURRENCY_LABEL[currency] ?? currency}
+          onPress={() => navigation.navigate("Currency")}
+          last
+        />
+      </Card>
+
+      <SectionLabel>App</SectionLabel>
+      <Card padded={false}>
+        <ListRow icon="notifications-outline" label="Notifications" onPress={() => navigation.navigate("Notifications")} />
+        <ListRow icon="refresh-outline" label="Run setup again" onPress={handleRerunSetup} last />
+      </Card>
+
+      <SectionLabel>Help</SectionLabel>
+      <Card padded={false}>
+        <ListRow icon="chatbubbles-outline" label="Contact support" onPress={() => navigation.navigate("Support")} />
+        <ListRow icon="book-outline" label="Help center" onPress={() => Linking.openURL("https://forcoach.io/guide")} />
+        <ListRow icon="document-text-outline" label="Terms of service" onPress={() => Linking.openURL("https://forcoach.io/terms")} />
+        <ListRow icon="shield-checkmark-outline" label="Privacy policy" onPress={() => Linking.openURL("https://forcoach.io/privacy")} last />
+      </Card>
+
+      <Card padded={false} style={{ marginTop: 20 }}>
+        <ListRow icon="log-out-outline" label="Log out" destructive onPress={handleLogOut} last />
+      </Card>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, padding: 20 },
-  title: { fontSize: 24, fontWeight: "700", color: colors.foreground, marginTop: 4 },
-  email: { fontSize: 13, color: colors.mutedForeground, marginTop: 4, marginBottom: 20 },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    overflow: "hidden",
-    ...cardShadow,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  rowIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: colors.accentLight,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rowBorder: { borderBottomWidth: 1, borderColor: colors.border },
-  rowLabel: { flex: 1, fontSize: 15, color: colors.foreground },
-  logoutBtn: {
-    marginTop: 24,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  logoutText: { color: colors.destructive, fontSize: 15, fontWeight: "600" },
+  profileCard: { flexDirection: "row", alignItems: "center", gap: 14 },
+  name: { fontSize: 17, fontWeight: "700", color: colors.foreground },
+  email: { fontSize: 13, color: colors.mutedForeground, marginTop: 2 },
 });

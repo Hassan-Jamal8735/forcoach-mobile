@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { GoogleLogo } from "./GoogleLogo";
+import { Banner } from "./ui";
 import { signInWithGoogle } from "../lib/google-auth";
 import { colors } from "../theme/colors";
 
@@ -18,33 +19,32 @@ export function GoogleSignInButton() {
 
   return (
     <>
-      <TouchableOpacity style={styles.button} onPress={handlePress} disabled={loading}>
+      {error && <Banner message={error} />}
+      <TouchableOpacity style={styles.button} onPress={handlePress} disabled={loading} activeOpacity={0.8}>
         {loading ? (
           <ActivityIndicator color={colors.foreground} />
         ) : (
           <>
-            <Ionicons name="logo-google" size={18} color="#4285F4" />
-            <Text style={styles.buttonText}>Continue with Google</Text>
+            <GoogleLogo />
+            <Text style={styles.text}>Continue with Google</Text>
           </>
         )}
       </TouchableOpacity>
-      {error && <Text style={styles.error}>{error}</Text>}
     </>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingVertical: 14,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
+    paddingVertical: 15,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
     backgroundColor: colors.card,
   },
-  buttonText: { color: colors.foreground, fontSize: 15, fontWeight: "600" },
-  error: { color: colors.destructiveText, fontSize: 13, marginTop: 8, textAlign: "center" },
+  text: { fontSize: 15, fontWeight: "700", color: colors.foreground },
 });

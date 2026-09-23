@@ -1,48 +1,69 @@
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { Picker } from "@react-native-picker/picker";
+import { Text } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { InvoicesStackParamList } from "../../navigation/invoices-types";
 import { createInvoice } from "../../lib/api/invoices";
 import { listStudios, type Studio } from "../../lib/api/studios";
+import { useAuth } from "../../context/AuthContext";
+import { Banner, Button, EmptyState, Field, Loading, SectionLabel, Segmented, StackScreen } from "../../components/ui";
+import { DateTimeField, SelectSheet } from "../../components/Pickers";
 import { colors } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<InvoicesStackParamList, "CreateInvoice">;
+type Preset = "last" | "this" | "custom";
 
-function startOfMonth(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), 1);
+function monthRange(offset: number) {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0);
+  return { start, end };
 }
 
 export function CreateInvoiceScreen({ navigation }: Props) {
-  const [studios, setStudios] = useState<Studio[]>([]);
-  const [studioId, setStudioId] = useState<string>("");
-  const [periodStart, setPeriodStart] = useState(startOfMonth(new Date()));
-  const [periodEnd, setPeriodEnd] = useState(new Date());
-  const [showStartPicker, setShowStartPicker] = useState(false);
-  const [showEndPicker, setShowEndPicker] = useState(false);
+  const { session } = useAuth();
+  const defaultVat = session?.user.user_metadata?.default_vat_rate as number | null | undefined;
+  const [studios, setStudios] = useState<Studio[] | null>(null);
+  const [studioId, setStudioId] = useState("");
+  const [preset, setPreset] = useState<Preset>("last");
+  const [start, setStart] = useState(monthRange(-1).start);
+  const [end, setEnd] = useState(monthRange(-1).end);
+  const [due, setDue] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d;
+  });
+  const [vat, setVat] = useState(defaultVat != null ? String(defaultVat) : "");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    listStudios().then((data) => {
-      setStudios(data);
-      if (data.length > 0) setStudioId(data[0].id);
-    });
+    listStudios()
+      .then((s) => {
+        const active = s.filter((x) => x.status === "active");
+        setStudios(active);
+        if (active[0]) setStudioId(active[0].id);
+      })
+      .catch(() => setStudios([]));
   }, []);
 
+  function applyPreset(p: Preset) {
+    setPreset(p);
+    if (p === "custom") return;
+    const r = monthRange(p === "last" ? -1 : 0);
+    setStart(r.start);
+    setEnd(r.end);
+  }
+
   async function handleCreate() {
-    if (!studioId) {
-      setError("Choose a studio first.");
-      return;
-    }
+    if (!studioId) return setError("Choose a studio.");
+    if (end < start) return setError("The end date must be after the start date.");
+    const vatRate = vat.trim() ? Number(vat.replace(",", ".")) : undefined;
+    if (vatRate != null && (Number.isNaN(vatRate) || vatRate < 0 || vatRate > 100)) return setError("VAT must be between 0 and 100.");
+    const periodEnd = new Date(end);
+    periodEnd.setHours(23, 59, 59, 999);
+    const periodStart = new Date(start);
+    periodStart.setHours(0, 0, 0, 0);
+
     setError(null);
     setCreating(true);
     try {
@@ -50,89 +71,58 @@ export function CreateInvoiceScreen({ navigation }: Props) {
         studioId,
         periodStart: periodStart.toISOString(),
         periodEnd: periodEnd.toISOString(),
+        dueDate: due.toISOString(),
+        vatRate,
       });
       navigation.replace("InvoiceDetail", { invoiceId: invoice.id });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create this invoice");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not create this invoice");
     } finally {
       setCreating(false);
     }
   }
 
+  if (!studios) return <Loading />;
+  if (studios.length === 0) {
+    return (
+      <StackScreen>
+        <EmptyState icon="business-outline" title="Add a studio first" subtitle="Invoices are created per studio. Add one from Settings → Studios." />
+      </StackScreen>
+    );
+  }
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.label}>Studio</Text>
-      <View style={styles.pickerWrap}>
-        <Picker selectedValue={studioId} onValueChange={setStudioId}>
-          {studios.map((s) => (
-            <Picker.Item key={s.id} label={s.name} value={s.id} />
-          ))}
-        </Picker>
-      </View>
+    <StackScreen footer={<Button title="Create draft invoice" onPress={handleCreate} loading={creating} />}>
+      {error && <Banner message={error} />}
+      <SelectSheet label="Studio" value={studioId} onChange={setStudioId} options={studios.map((s) => ({ value: s.id, label: s.name }))} />
 
-      <Text style={styles.label}>Period start</Text>
-      <TouchableOpacity style={styles.dateBtn} onPress={() => setShowStartPicker(true)}>
-        <Text>{periodStart.toLocaleDateString()}</Text>
-      </TouchableOpacity>
-      {showStartPicker && (
-        <DateTimePicker
-          value={periodStart}
-          mode="date"
-          onChange={(_, selected) => {
-            setShowStartPicker(false);
-            if (selected) setPeriodStart(selected);
-          }}
-        />
-      )}
+      <SectionLabel>Period</SectionLabel>
+      <Segmented
+        options={[
+          { value: "last", label: "Last month" },
+          { value: "this", label: "This month" },
+          { value: "custom", label: "Custom" },
+        ]}
+        value={preset}
+        onChange={applyPreset}
+      />
+      <Text style={{ height: 12 }} />
+      <DateTimeField label="From" mode="date" value={start} onChange={(d) => { setPreset("custom"); setStart(d); }} />
+      <DateTimeField label="To" mode="date" value={end} onChange={(d) => { setPreset("custom"); setEnd(d); }} />
 
-      <Text style={styles.label}>Period end</Text>
-      <TouchableOpacity style={styles.dateBtn} onPress={() => setShowEndPicker(true)}>
-        <Text>{periodEnd.toLocaleDateString()}</Text>
-      </TouchableOpacity>
-      {showEndPicker && (
-        <DateTimePicker
-          value={periodEnd}
-          mode="date"
-          onChange={(_, selected) => {
-            setShowEndPicker(false);
-            if (selected) setPeriodEnd(selected);
-          }}
-        />
-      )}
-
-      {error && <Text style={styles.error}>{error}</Text>}
-
-      <TouchableOpacity style={styles.createBtn} onPress={handleCreate} disabled={creating}>
-        {creating ? (
-          <ActivityIndicator color={colors.offWhite} />
-        ) : (
-          <Text style={styles.createBtnText}>Create invoice</Text>
-        )}
-      </TouchableOpacity>
-    </ScrollView>
+      <SectionLabel>Details</SectionLabel>
+      <DateTimeField label="Due date" mode="date" value={due} onChange={setDue} />
+      <Field
+        label="VAT rate (%)"
+        value={vat}
+        onChangeText={setVat}
+        keyboardType="decimal-pad"
+        placeholder="No VAT"
+        hint="Defaults to the rate in your profile."
+      />
+      <Text style={{ fontSize: 13, color: colors.mutedForeground, lineHeight: 19 }}>
+        Every class assigned to this studio in the period is added automatically. You can adjust rates before generating.
+      </Text>
+    </StackScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: 20, paddingBottom: 40 },
-  label: { fontSize: 13, fontWeight: "600", color: colors.mutedForeground, marginTop: 16, marginBottom: 6 },
-  pickerWrap: { borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: colors.card },
-  dateBtn: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    backgroundColor: colors.card,
-  },
-  error: { color: colors.destructiveText, fontSize: 13, marginTop: 16 },
-  createBtn: {
-    backgroundColor: colors.charcoal,
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 28,
-  },
-  createBtnText: { color: colors.offWhite, fontSize: 15, fontWeight: "600" },
-});

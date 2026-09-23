@@ -31,6 +31,7 @@ export type EventInput = {
   status?: EventStatus;
   notes?: string;
   rateOverride?: number | null;
+  attendanceCount?: number | null;
 };
 
 export function listEvents() {

@@ -1,121 +1,122 @@
 import { useState } from "react";
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { OnboardingStackParamList } from "../../navigation/onboarding-types";
-import { OnboardingHeader } from "../../components/OnboardingHeader";
+import { OnboardingLayout } from "../../components/OnboardingLayout";
 import { useOnboarding } from "../../context/OnboardingContext";
-import { updateStudio } from "../../lib/api/studios";
-import { colors } from "../../theme/colors";
+import { updateStudio, type CompensationType } from "../../lib/api/studios";
+import { Avatar, Banner, Button, Card, EmptyState, initials } from "../../components/ui";
+import { colors, studioColor } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "SetRates">;
 
+const SYMBOLS: Record<string, string> = { EUR: "€", USD: "$", GBP: "£" };
+
 export function SetRatesScreen({ navigation }: Props) {
-  const { studios } = useOnboarding();
-  const [rates, setRates] = useState<Record<string, string>>({});
+  const { studios, currency } = useOnboarding();
+  const [rates, setRates] = useState<Record<string, string>>(() =>
+    Object.fromEntries(studios.map((s) => [s.id, s.compensation_value ? String(s.compensation_value) : ""])),
+  );
+  const [types, setTypes] = useState<Record<string, CompensationType>>(() =>
+    Object.fromEntries(studios.map((s) => [s.id, s.compensation_type === "hourly" ? "hourly" : "per_class"])),
+  );
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const symbol = SYMBOLS[currency] ?? "€";
+  const editable = studios.filter((s) => s.compensation_type !== "tiered");
 
   async function handleNext() {
     setSaving(true);
+    setError(null);
     try {
       await Promise.all(
-        studios.map((studio) => {
-          const value = Number(rates[studio.id]);
-          if (!value || Number.isNaN(value)) return Promise.resolve();
-          return updateStudio(studio.id, {
-            compensationType: "per_class",
-            compensationValue: value,
-          });
+        editable.map((s) => {
+          const value = Number((rates[s.id] ?? "").replace(",", "."));
+          if (!rates[s.id]?.trim() || Number.isNaN(value) || value < 0) return Promise.resolve();
+          return updateStudio(s.id, { compensationType: types[s.id] ?? "per_class", compensationValue: value });
         }),
       );
-    } catch {
-      // Rates can always be fixed later from Settings — don't block onboarding on this.
+      navigation.navigate("ChooseCurrency");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save your rates");
     } finally {
       setSaving(false);
-      navigation.navigate("ChooseCurrency");
     }
   }
 
   return (
-    <View style={styles.container}>
-      <OnboardingHeader step={3} onBack={() => navigation.goBack()} />
-      <View style={styles.content}>
-        <Text style={styles.title}>Set your rates</Text>
-        <Text style={styles.subtitle}>
-          Add your default pay rate for each studio. You can always change this later.
-        </Text>
-
-        {studios.length === 0 ? (
-          <Text style={styles.empty}>
-            No studios added yet — you can set rates any time from Settings.
-          </Text>
-        ) : (
-          studios.map((studio) => (
-            <View key={studio.id} style={styles.row}>
-              <Text style={styles.studioName}>{studio.name}</Text>
-              <View style={styles.rateInputWrap}>
-                <Text style={styles.currencySymbol}>€</Text>
-                <TextInput
-                  style={styles.rateInput}
-                  keyboardType="decimal-pad"
-                  placeholder="0"
-                  value={rates[studio.id] ?? ""}
-                  onChangeText={(v) => setRates((prev) => ({ ...prev, [studio.id]: v }))}
-                />
-                <Text style={styles.perClass}>/class</Text>
+    <OnboardingLayout
+      step={3}
+      onBack={() => navigation.goBack()}
+      title="Set your rates"
+      subtitle="Your default pay for each studio. You can always change this later."
+      footer={<Button title="Next" icon="arrow-forward" variant="dark" onPress={handleNext} loading={saving} />}
+    >
+      {error && <Banner message={error} />}
+      {editable.length === 0 ? (
+        <EmptyState icon="cash-outline" title="No studios yet" subtitle="You can set rates any time from Settings → Studios." />
+      ) : (
+        editable.map((s) => {
+          const type = types[s.id] ?? "per_class";
+          return (
+            <Card key={s.id}>
+              <View style={styles.head}>
+                <Avatar label={initials(s.name)} color={studioColor(s.id)} size={34} />
+                <Text style={styles.name} numberOfLines={1}>
+                  {s.name}
+                </Text>
               </View>
-            </View>
-          ))
-        )}
-      </View>
-
-      <TouchableOpacity style={styles.nextBtn} onPress={handleNext} disabled={saving}>
-        {saving ? (
-          <ActivityIndicator color={colors.offWhite} />
-        ) : (
-          <Text style={styles.nextBtnText}>Next  →</Text>
-        )}
-      </TouchableOpacity>
-    </View>
+              <View style={styles.row}>
+                <View style={styles.chips}>
+                  {(["per_class", "hourly"] as CompensationType[]).map((t) => (
+                    <TouchableOpacity
+                      key={t}
+                      style={[styles.chip, type === t && styles.chipActive]}
+                      onPress={() => setTypes((p) => ({ ...p, [s.id]: t }))}
+                    >
+                      <Text style={[styles.chipText, type === t && styles.chipTextActive]}>{t === "per_class" ? "Per class" : "Hourly"}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <View style={styles.rateBox}>
+                  <Text style={styles.symbol}>{symbol}</Text>
+                  <TextInput
+                    style={styles.rateInput}
+                    keyboardType="decimal-pad"
+                    placeholder="0"
+                    placeholderTextColor={colors.mutedForeground}
+                    value={rates[s.id] ?? ""}
+                    onChangeText={(v) => setRates((p) => ({ ...p, [s.id]: v }))}
+                  />
+                </View>
+              </View>
+            </Card>
+          );
+        })
+      )}
+    </OnboardingLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { flex: 1, paddingHorizontal: 20 },
-  title: { fontSize: 24, fontWeight: "700", color: colors.foreground, marginTop: 12 },
-  subtitle: { fontSize: 14, color: colors.mutedForeground, marginTop: 8, marginBottom: 24 },
-  empty: { fontSize: 14, color: colors.mutedForeground },
-  row: {
+  head: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
+  name: { flex: 1, fontSize: 16, fontWeight: "700", color: colors.foreground },
+  row: { flexDirection: "row", alignItems: "center", gap: 10 },
+  chips: { flex: 1, flexDirection: "row", backgroundColor: colors.secondary, borderRadius: 10, padding: 3, gap: 3 },
+  chip: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: "center" },
+  chipActive: { backgroundColor: colors.card },
+  chipText: { fontSize: 12, fontWeight: "600", color: colors.mutedForeground },
+  chipTextActive: { color: colors.foreground },
+  rateBox: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: colors.card,
-    borderRadius: 10,
+    width: 96,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    marginBottom: 10,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    backgroundColor: colors.background,
   },
-  studioName: { fontSize: 15, color: colors.foreground, fontWeight: "500", flex: 1 },
-  rateInputWrap: { flexDirection: "row", alignItems: "center", gap: 4 },
-  currencySymbol: { fontSize: 15, color: colors.mutedForeground },
-  rateInput: { width: 50, fontSize: 15, color: colors.foreground, textAlign: "right" },
-  perClass: { fontSize: 13, color: colors.mutedForeground },
-  nextBtn: {
-    backgroundColor: colors.charcoal,
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginHorizontal: 20,
-    marginBottom: 24,
-  },
-  nextBtnText: { color: colors.offWhite, fontSize: 16, fontWeight: "600" },
+  symbol: { fontSize: 15, color: colors.mutedForeground },
+  rateInput: { flex: 1, fontSize: 16, fontWeight: "700", color: colors.foreground, paddingVertical: 9, textAlign: "right" },
 });

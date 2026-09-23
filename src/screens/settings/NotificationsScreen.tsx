@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, Switch, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Switch, Text } from "react-native";
 import {
   getNotificationsEnabled,
   requestNotificationPermission,
@@ -7,88 +7,56 @@ import {
   setNotificationsEnabled,
 } from "../../lib/notifications";
 import { listEvents } from "../../lib/api/events";
+import { Card, ListRow, Loading, StackScreen } from "../../components/ui";
 import { colors } from "../../theme/colors";
 
 export function NotificationsScreen() {
-  const [enabled, setEnabled] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [enabled, setEnabled] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    getNotificationsEnabled().then((v) => {
-      setEnabled(v);
-      setLoading(false);
-    });
+    getNotificationsEnabled().then(setEnabled);
   }, []);
 
-  async function handleToggle(next: boolean) {
+  async function toggle(next: boolean) {
     setBusy(true);
     try {
-      if (next) {
-        const granted = await requestNotificationPermission();
-        if (!granted) {
-          Alert.alert(
-            "Notifications disabled",
-            "Enable notifications for FORCOACH in your phone's Settings app to use this.",
-          );
-          setBusy(false);
-          return;
-        }
+      if (next && !(await requestNotificationPermission())) {
+        Alert.alert(
+          "Notifications are off",
+          "Allow notifications for FORCOACH in your phone's Settings app to use reminders.",
+        );
+        return;
       }
       await setNotificationsEnabled(next);
       setEnabled(next);
-      if (next) {
-        const events = await listEvents();
-        await scheduleClassReminders(events);
-      }
+      if (next) await scheduleClassReminders(await listEvents());
     } finally {
       setBusy(false);
     }
   }
 
-  if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    );
-  }
+  if (enabled === null) return <Loading />;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.row}>
-        <View style={styles.rowText}>
-          <Text style={styles.label}>Upcoming class reminders</Text>
-          <Text style={styles.hint}>Get notified 30 minutes before your next class starts.</Text>
-        </View>
-        {busy ? (
-          <ActivityIndicator color={colors.accent} size="small" />
-        ) : (
-          <Switch
-            value={enabled}
-            onValueChange={handleToggle}
-            trackColor={{ false: colors.border, true: colors.accent }}
-          />
-        )}
-      </View>
-    </View>
+    <StackScreen>
+      <Card padded={false}>
+        <ListRow
+          icon="alarm-outline"
+          label="Class reminders"
+          last
+          right={
+            busy ? (
+              <ActivityIndicator color={colors.accent} />
+            ) : (
+              <Switch value={enabled} onValueChange={toggle} trackColor={{ true: colors.accent, false: colors.border }} />
+            )
+          }
+        />
+      </Card>
+      <Text style={{ fontSize: 13, color: colors.mutedForeground, marginLeft: 4 }}>
+        Get a reminder 30 minutes before each class you've assigned to a studio.
+      </Text>
+    </StackScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, padding: 20 },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
-  },
-  rowText: { flex: 1, marginRight: 12 },
-  label: { fontSize: 15, fontWeight: "600", color: colors.foreground },
-  hint: { fontSize: 13, color: colors.mutedForeground, marginTop: 4 },
-});

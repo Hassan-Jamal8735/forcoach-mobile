@@ -1,6 +1,6 @@
 import { supabase } from "../supabase";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
+export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
 
 export class ApiError extends Error {
   constructor(
@@ -11,7 +11,7 @@ export class ApiError extends Error {
   }
 }
 
-async function getValidAccessToken(): Promise<string | null> {
+export async function getValidAccessToken(): Promise<string | null> {
   const {
     data: { session },
   } = await supabase.auth.getSession();

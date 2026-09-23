@@ -28,3 +28,7 @@ export function createCheckoutSession(plan: Plan) {
     body: JSON.stringify({ plan }),
   });
 }
+
+export function createPortalSession() {
+  return apiFetch<{ url: string }>("/billing/portal", { method: "POST" });
+}

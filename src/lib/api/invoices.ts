@@ -1,4 +1,5 @@
-import { apiFetch } from "./client";
+import { cacheDirectory, downloadAsync } from "expo-file-system/legacy";
+import { API_URL, ApiError, apiFetch, getValidAccessToken } from "./client";
 
 export type InvoiceStatus = "draft" | "generated" | "archived";
 
@@ -67,4 +68,27 @@ export function generateInvoice(id: string) {
 
 export function deleteInvoice(id: string) {
   return apiFetch<void>(`/invoices/${id}`, { method: "DELETE" });
+}
+
+export function updateLineItemRate(invoiceId: string, lineItemId: string, rate: number) {
+  return apiFetch<void>(`/invoices/${invoiceId}/line-items/${lineItemId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ rate }),
+  });
+}
+
+export function updateInvoice(id: string, input: { dueDate?: string; vatRate?: number; notes?: string }) {
+  return apiFetch<Invoice>(`/invoices/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+}
+
+/** Downloads the invoice PDF to the app cache and returns its local file URI. */
+export async function downloadInvoicePdf(invoice: Invoice): Promise<string> {
+  const token = await getValidAccessToken();
+  if (!token) throw new ApiError(401, "Not authenticated");
+  const filename = `${invoice.invoice_number ?? `draft-${invoice.id.slice(0, 8)}`}.pdf`;
+  const result = await downloadAsync(`${API_URL}/invoices/${invoice.id}/pdf`, `${cacheDirectory}${filename}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (result.status !== 200) throw new ApiError(result.status, "Could not download the PDF");
+  return result.uri;
 }

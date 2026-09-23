@@ -9,7 +9,6 @@ import { AuthNavigator } from "./AuthNavigator";
 import { CalendarNavigator } from "./CalendarNavigator";
 import { EarningsScreen } from "../screens/EarningsScreen";
 import { InvoicesNavigator } from "./InvoicesNavigator";
-import { StudiosNavigator } from "./StudiosNavigator";
 import { SettingsNavigator } from "./SettingsNavigator";
 import { OnboardingNavigator } from "./OnboardingNavigator";
 import { supabase } from "../lib/supabase";
@@ -22,7 +21,6 @@ const TAB_ICONS: Record<keyof RootTabParamList, keyof typeof Ionicons.glyphMap> 
   Calendar: "calendar-outline",
   Earnings: "stats-chart-outline",
   Invoices: "receipt-outline",
-  Studios: "business-outline",
   Settings: "settings-outline",
 };
 
@@ -30,7 +28,6 @@ const TAB_ICONS_FOCUSED: Record<keyof RootTabParamList, keyof typeof Ionicons.gl
   Calendar: "calendar",
   Earnings: "stats-chart",
   Invoices: "receipt",
-  Studios: "business",
   Settings: "settings",
 };
 
@@ -56,8 +53,14 @@ function AppTabs() {
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
-          height: 84,
-          paddingTop: 8,
+          borderTopWidth: 0,
+          height: 88,
+          paddingTop: 10,
+          shadowColor: "#1c1c1c",
+          shadowOpacity: 0.06,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: -2 },
+          elevation: 8,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
         tabBarIcon: ({ focused, color, size }) => (
@@ -76,7 +79,6 @@ function AppTabs() {
       <Tab.Screen name="Calendar" component={CalendarNavigator} options={{ title: "Schedule" }} />
       <Tab.Screen name="Earnings" component={EarningsScreen} />
       <Tab.Screen name="Invoices" component={InvoicesNavigator} />
-      <Tab.Screen name="Studios" component={StudiosNavigator} />
       <Tab.Screen name="Settings" component={SettingsNavigator} />
     </Tab.Navigator>
   );
@@ -101,33 +103,39 @@ export function RootNavigator() {
   const { session, loading } = useAuth();
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
 
+  const userId = session?.user.id;
+  const onboardingFlag = session?.user.user_metadata?.mobile_onboarding_completed as boolean | undefined;
+
+  // Keyed on the user id and the flag only — a token refresh replaces the
+  // session object but must not re-trigger this check (it caused a flash).
   useEffect(() => {
-    if (!session) {
+    if (!userId) {
       setNeedsOnboarding(null);
       return;
     }
-
-    if (session.user.user_metadata?.mobile_onboarding_completed) {
+    if (onboardingFlag === true) {
       setNeedsOnboarding(false);
       return;
     }
+    // Explicitly false = coach chose "Run setup again" from Settings.
+    if (onboardingFlag === false) {
+      setNeedsOnboarding(true);
+      return;
+    }
 
-    setNeedsOnboarding(null);
     listStudios()
       .then((studios) => {
         if (studios.length > 0) {
           // Existing web coach opening the app for the first time — they've
           // already set things up, so don't force them through the wizard.
-          supabase.auth
-            .updateUser({ data: { mobile_onboarding_completed: true } })
-            .catch(() => {});
+          supabase.auth.updateUser({ data: { mobile_onboarding_completed: true } }).catch(() => {});
           setNeedsOnboarding(false);
         } else {
           setNeedsOnboarding(true);
         }
       })
       .catch(() => setNeedsOnboarding(false));
-  }, [session]);
+  }, [userId, onboardingFlag]);
 
   if (loading) return <Loading />;
 

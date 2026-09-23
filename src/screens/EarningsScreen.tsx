@@ -1,191 +1,195 @@
 import { useCallback, useState } from "react";
-import {
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { getEarningsSummary, getEarningsTimeseries, type EarningsSummary, type TimeseriesPoint } from "../lib/api/earnings";
-import { colors, cardShadow, studioColor } from "../theme/colors";
+import {
+  getEarningsSummary,
+  getEarningsTimeseries,
+  type EarningsSummary,
+  type TimeseriesPoint,
+} from "../lib/api/earnings";
+import { useCurrency } from "../lib/currency";
+import { Avatar, Banner, Card, EmptyState, Loading, Screen, ScreenHeader, SectionLabel, Segmented, initials } from "../components/ui";
+import { colors, studioColor } from "../theme/colors";
 
 type Period = "week" | "month" | "year";
 
-function initials(name: string) {
-  return name
-    .trim()
-    .split(/\s+/)
-    .map((w) => w[0]?.toUpperCase())
-    .slice(0, 2)
-    .join("");
-}
-
-function rangeFor(period: Period) {
+function range(period: Period) {
   const now = new Date();
   const start = new Date(now);
-  if (period === "week") start.setDate(now.getDate() - 7);
-  if (period === "month") start.setMonth(now.getMonth() - 1);
-  if (period === "year") start.setFullYear(now.getFullYear() - 1);
+  if (period === "week") start.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  if (period === "month") start.setDate(1);
+  if (period === "year") start.setMonth(0, 1);
+  start.setHours(0, 0, 0, 0);
   return { from: start.toISOString(), to: now.toISOString() };
 }
 
+const GRANULARITY: Record<Period, "day" | "week" | "month"> = { week: "day", month: "week", year: "month" };
+
+function bucketLabel(bucket: string, period: Period) {
+  if (period === "year") return new Date(`${bucket}-01T00:00:00`).toLocaleDateString(undefined, { month: "short" });
+  const d = new Date(`${bucket}T00:00:00`);
+  return period === "week" ? d.toLocaleDateString(undefined, { weekday: "short" }) : `${d.getDate()}/${d.getMonth() + 1}`;
+}
+
 export function EarningsScreen() {
+  const { format } = useCurrency();
   const [period, setPeriod] = useState<Period>("month");
   const [summary, setSummary] = useState<EarningsSummary | null>(null);
   const [points, setPoints] = useState<TimeseriesPoint[]>([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async (p: Period) => {
     try {
       setError(null);
-      const { from, to } = rangeFor(p);
-      const [summaryData, timeseriesData] = await Promise.all([
-        getEarningsSummary(from, to),
-        getEarningsTimeseries(from, to, "week"),
-      ]);
-      setSummary(summaryData);
-      setPoints(timeseriesData.points);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load earnings");
+      const { from, to } = range(p);
+      const [s, t] = await Promise.all([getEarningsSummary(from, to), getEarningsTimeseries(from, to, GRANULARITY[p])]);
+      setSummary(s);
+      setPoints(t.points);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not load earnings");
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
       load(period);
     }, [load, period]),
   );
 
-  const maxEarnings = Math.max(1, ...points.map((p) => p.earnings));
+  if (!summary && !error) return <Loading />;
 
-  if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    );
-  }
+  const max = Math.max(1, ...points.map((p) => p.earnings));
+  const top = Math.max(1, ...(summary?.studioBreakdown ?? []).map((s) => s.earnings));
+  const periodLabel = { week: "this week", month: "this month", year: "this year" }[period];
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={() => {
-            setRefreshing(true);
-            load(period);
-          }}
-        />
-      }
+    <Screen
+      refreshing={refreshing}
+      onRefresh={() => {
+        setRefreshing(true);
+        load(period);
+      }}
     >
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Your Earnings</Text>
-        <View style={styles.periodRow}>
-          {(["week", "month", "year"] as Period[]).map((p) => (
-            <TouchableOpacity
-              key={p}
-              style={[styles.periodBtn, period === p && styles.periodBtnActive]}
-              onPress={() => setPeriod(p)}
-            >
-              <Text style={[styles.periodText, period === p && styles.periodTextActive]}>
-                {p === "week" ? "Week" : p === "month" ? "Month" : "Year"}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      <ScreenHeader title="Earnings" />
+      <Segmented
+        options={[
+          { value: "week", label: "Week" },
+          { value: "month", label: "Month" },
+          { value: "year", label: "Year" },
+        ]}
+        value={period}
+        onChange={setPeriod}
+      />
+
+      {error && <View style={{ marginTop: 12 }}><Banner message={error} /></View>}
+
+      <Card style={styles.hero}>
+        <Text style={styles.heroLabel}>Earned {periodLabel}</Text>
+        <Text style={styles.heroAmount}>{format(summary?.totalEarnings ?? 0, 0)}</Text>
+
+        {points.length > 0 ? (
+          <View style={styles.chart}>
+            {points.map((p) => {
+              const isMax = p.earnings === max && max > 1;
+              return (
+                <View key={p.bucket} style={styles.barCol}>
+                  <View style={styles.barTrack}>
+                    <View style={[styles.bar, { height: `${Math.max(4, (p.earnings / max) * 100)}%` }, isMax && styles.barMax]} />
+                  </View>
+                  <Text style={styles.barLabel} numberOfLines={1}>
+                    {bucketLabel(p.bucket, period)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        ) : (
+          <Text style={styles.noData}>No paid classes yet {periodLabel}.</Text>
+        )}
+      </Card>
+
+      <View style={styles.stats}>
+        <Stat label="Classes" value={String(summary?.classCount ?? 0)} />
+        <Stat label="Hours" value={String(Number((summary?.totalHours ?? 0).toFixed(1)))} />
+        <Stat label="Avg / class" value={format(summary?.avgClassRate ?? 0, 0)} />
       </View>
 
-      {error && <Text style={styles.error}>{error}</Text>}
+      {!!summary?.pendingCount && (
+        <Banner
+          tone="info"
+          message={`${summary.pendingCount} class${summary.pendingCount === 1 ? " isn't" : "es aren't"} assigned to a studio yet, so ${summary.pendingCount === 1 ? "it's" : "they're"} not counted.`}
+        />
+      )}
+      {!!summary?.pendingAttendanceCount && (
+        <Banner
+          tone="info"
+          message={`${summary.pendingAttendanceCount} tiered class${summary.pendingAttendanceCount === 1 ? " needs" : "es need"} attendance before ${summary.pendingAttendanceCount === 1 ? "it" : "they"} can be priced.`}
+        />
+      )}
 
-      <Text style={styles.total}>€{(summary?.totalEarnings ?? 0).toFixed(0)}</Text>
-      <Text style={styles.totalSubtitle}>
-        {summary?.classCount ?? 0} class{summary?.classCount === 1 ? "" : "es"}
-        {summary?.bestStudio ? ` · Best: ${summary.bestStudio}` : ""}
-      </Text>
-
-      {points.length > 0 && (
-        <View style={styles.chart}>
-          {points.map((p) => (
-            <View key={p.bucket} style={styles.chartBarWrap}>
-              <View
-                style={[
-                  styles.chartBar,
-                  { height: Math.max(4, (p.earnings / maxEarnings) * 100) },
-                ]}
-              />
+      <SectionLabel>Breakdown by studio</SectionLabel>
+      {(summary?.studioBreakdown ?? []).length === 0 ? (
+        <Card>
+          <EmptyState icon="stats-chart-outline" title="Nothing to show yet" subtitle="Earnings appear once classes are assigned to a studio." />
+        </Card>
+      ) : (
+        <Card>
+          {summary?.studioBreakdown.map((s, i) => (
+            <View key={s.studioId} style={[styles.studio, i > 0 && styles.studioDivider]}>
+              <View style={styles.studioTop}>
+                <Avatar label={initials(s.studioName)} color={studioColor(s.studioId)} size={34} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.studioName}>{s.studioName}</Text>
+                  <Text style={styles.studioMeta}>
+                    {s.classCount} class{s.classCount === 1 ? "" : "es"} · {Number(s.hours.toFixed(1))}h
+                  </Text>
+                </View>
+                <Text style={styles.studioAmount}>{format(s.earnings, 0)}</Text>
+              </View>
+              <View style={styles.progressTrack}>
+                <View style={[styles.progress, { width: `${(s.earnings / top) * 100}%`, backgroundColor: studioColor(s.studioId) }]} />
+              </View>
             </View>
           ))}
-        </View>
+        </Card>
       )}
+    </Screen>
+  );
+}
 
-      <Text style={styles.sectionLabel}>Breakdown by studio</Text>
-      {(summary?.studioBreakdown ?? []).length === 0 ? (
-        <Text style={styles.empty}>No earnings yet for this period.</Text>
-      ) : (
-        summary?.studioBreakdown.map((s) => (
-          <View key={s.studioId} style={styles.studioRow}>
-            <View style={[styles.avatar, { backgroundColor: studioColor(s.studioId) }]}>
-              <Text style={styles.avatarText}>{initials(s.studioName)}</Text>
-            </View>
-            <Text style={styles.studioName}>{s.studioName}</Text>
-            <Text style={styles.studioAmount}>€{s.earnings.toFixed(0)}</Text>
-          </View>
-        ))
-      )}
-    </ScrollView>
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <Card style={styles.stat}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
-  content: { padding: 20, paddingBottom: 40 },
-  headerRow: { marginBottom: 16 },
-  title: { fontSize: 24, fontWeight: "700", color: colors.foreground, marginBottom: 12 },
-  periodRow: { flexDirection: "row", backgroundColor: colors.secondary, borderRadius: 10, padding: 4, gap: 4 },
-  periodBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: "center" },
-  periodBtnActive: { backgroundColor: colors.card },
-  periodText: { fontSize: 13, color: colors.mutedForeground, fontWeight: "600" },
-  periodTextActive: { color: colors.foreground },
-  error: { color: colors.destructiveText, fontSize: 13, marginBottom: 12 },
-  total: { fontSize: 40, fontWeight: "700", color: colors.foreground },
-  totalSubtitle: { fontSize: 13, color: colors.mutedForeground, marginTop: 4, marginBottom: 24 },
-  chart: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    height: 110,
-    marginBottom: 28,
-    gap: 8,
-  },
-  chartBarWrap: { flex: 1, alignItems: "center", justifyContent: "flex-end", height: 100 },
-  chartBar: { width: "100%", backgroundColor: colors.accent, borderRadius: 6, minHeight: 4 },
-  sectionLabel: { fontSize: 13, fontWeight: "600", color: colors.mutedForeground, marginBottom: 10 },
-  empty: { fontSize: 14, color: colors.mutedForeground },
-  studioRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.card,
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginBottom: 8,
-    gap: 10,
-    ...cardShadow,
-  },
-  avatar: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  avatarText: { fontSize: 11, fontWeight: "700", color: "#fff" },
-  studioName: { flex: 1, fontSize: 15, color: colors.foreground },
-  studioAmount: { fontSize: 15, fontWeight: "600", color: colors.foreground },
+  hero: { marginTop: 16, paddingBottom: 12 },
+  heroLabel: { fontSize: 13, fontWeight: "600", color: colors.mutedForeground },
+  heroAmount: { fontSize: 40, fontWeight: "800", color: colors.foreground, letterSpacing: -1, marginTop: 2 },
+  chart: { flexDirection: "row", alignItems: "flex-end", height: 140, gap: 6, marginTop: 16 },
+  barCol: { flex: 1, alignItems: "center", height: "100%" },
+  barTrack: { flex: 1, width: "100%", justifyContent: "flex-end" },
+  bar: { width: "100%", backgroundColor: colors.accentLight, borderRadius: 8 },
+  barMax: { backgroundColor: colors.accent },
+  barLabel: { fontSize: 10, color: colors.mutedForeground, marginTop: 6 },
+  noData: { fontSize: 13, color: colors.mutedForeground, marginTop: 12 },
+  stats: { flexDirection: "row", gap: 10 },
+  stat: { flex: 1, alignItems: "center", paddingVertical: 14, paddingHorizontal: 6 },
+  statValue: { fontSize: 18, fontWeight: "800", color: colors.foreground },
+  statLabel: { fontSize: 12, color: colors.mutedForeground, marginTop: 2 },
+  studio: { paddingVertical: 10 },
+  studioDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  studioTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  studioName: { fontSize: 15, fontWeight: "600", color: colors.foreground },
+  studioMeta: { fontSize: 12, color: colors.mutedForeground, marginTop: 1 },
+  studioAmount: { fontSize: 15, fontWeight: "700", color: colors.foreground },
+  progressTrack: { height: 5, borderRadius: 3, backgroundColor: colors.secondary, marginTop: 10, overflow: "hidden" },
+  progress: { height: "100%", borderRadius: 3 },
 });

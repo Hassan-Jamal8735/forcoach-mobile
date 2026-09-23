@@ -24,6 +24,12 @@ export type StudioInput = {
   compensationType: CompensationType;
   compensationValue?: number;
   status?: "active" | "inactive";
+  contactPerson?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  notes?: string;
+  referenceId?: string;
 };
 
 export function listStudios() {
