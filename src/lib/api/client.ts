@@ -1,6 +1,7 @@
 import { supabase } from "../supabase";
+import { API_BASE_URL } from "../config";
 
-export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
+export const API_URL = API_BASE_URL;
 
 // Fired when the API says this coach needs a plan (HTTP 402), so the app can
 // swap to the subscribe screen wherever the coach happens to be.
