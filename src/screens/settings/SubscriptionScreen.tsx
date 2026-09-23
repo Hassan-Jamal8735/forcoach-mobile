@@ -1,13 +1,15 @@
 import { useCallback, useState } from "react";
-import { Linking, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   createCheckoutSession,
   createPortalSession,
   getBillingStatus,
   type BillingStatus,
+  waitForActiveSubscription,
   type Plan,
 } from "../../lib/api/billing";
+import { runReturnFlow } from "../../lib/return-flow";
 import { Badge, Banner, Button, Card, Loading, Segmented, StackScreen } from "../../components/ui";
 import { colors } from "../../theme/colors";
 
@@ -26,6 +28,7 @@ export function SubscriptionScreen() {
   const [plan, setPlan] = useState<Plan>("monthly");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -35,12 +38,30 @@ export function SubscriptionScreen() {
     }, []),
   );
 
-  async function open(fn: () => Promise<{ url: string }>) {
+  async function startTrial() {
     setBusy(true);
     setError(null);
+    setInfo(null);
     try {
-      const { url } = await fn();
-      await Linking.openURL(url);
+      const result = await runReturnFlow((returnTo) => createCheckoutSession(plan, returnTo));
+      const started = await waitForActiveSubscription(result?.billing === "success" ? 10000 : 1500);
+      setStatus(await getBillingStatus());
+      if (started) setInfo("Your free trial has started.");
+      else setError("Checkout wasn't completed, so no trial was started.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function manageBilling() {
+    setBusy(true);
+    setError(null);
+    setInfo(null);
+    try {
+      await runReturnFlow((returnTo) => createPortalSession(returnTo));
+      setStatus(await getBillingStatus());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -56,6 +77,7 @@ export function SubscriptionScreen() {
   return (
     <StackScreen>
       {error && <Banner message={error} />}
+      {info && <Banner tone="success" message={info} />}
       <Card>
         <View style={styles.row}>
           <Text style={styles.plan}>Coach Plan</Text>
@@ -72,7 +94,7 @@ export function SubscriptionScreen() {
 
       {hasPlan ? (
         <>
-          <Button title="Manage billing" icon="open-outline" onPress={() => open(createPortalSession)} loading={busy} />
+          <Button title="Manage billing" icon="open-outline" onPress={manageBilling} loading={busy} />
           <Text style={styles.hint}>
             Update your card, switch plan, download receipts or cancel — opens Stripe securely.
           </Text>
@@ -88,7 +110,7 @@ export function SubscriptionScreen() {
             onChange={setPlan}
           />
           <View style={{ height: 16 }} />
-          <Button title="Start 15-day free trial" onPress={() => open(() => createCheckoutSession(plan))} loading={busy} />
+          <Button title="Start 15-day free trial" onPress={startTrial} loading={busy} />
           <Text style={styles.hint}>You won't be charged until the trial ends. Cancel anytime.</Text>
         </>
       )}

@@ -18,9 +18,7 @@ export function WelcomeScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <View style={styles.top}>
-        <View style={styles.logoWrap}>
-          <Image source={require("../../../assets/brand-logo.png")} style={styles.logo} resizeMode="contain" />
-        </View>
+        <Image source={require("../../../assets/brand-mark.png")} style={styles.logo} resizeMode="contain" />
         <Text style={styles.wordmark}>FORCOACH</Text>
         <Text style={styles.tagline}>MANAGE · GROW · INSPIRE</Text>
       </View>
@@ -47,21 +45,7 @@ export function WelcomeScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   top: { flex: 1, alignItems: "center", justifyContent: "center" },
-  logoWrap: {
-    width: 96,
-    height: 96,
-    borderRadius: 28,
-    backgroundColor: colors.card,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 18,
-    shadowColor: "#1c1c1c",
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
-  },
-  logo: { width: 56, height: 56 },
+  logo: { width: 132, height: 97, marginBottom: 20 },
   wordmark: { fontSize: 24, fontWeight: "800", letterSpacing: 4, color: colors.foreground },
   tagline: { fontSize: 11, letterSpacing: 2, color: colors.mutedForeground, marginTop: 6 },
   bottom: { paddingHorizontal: 24, paddingBottom: 16 },

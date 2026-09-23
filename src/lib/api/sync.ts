@@ -38,7 +38,8 @@ export const deleteIcsFeed = (id: string) => apiFetch<void>(`/ics-feeds/${id}`, 
 
 export const getGoogleStatus = () => apiFetch<GoogleCalendarStatus>("/calendar/google/status");
 
-export const getGoogleConnectUrl = () => apiFetch<{ url: string }>("/auth/google/connect");
+export const getGoogleConnectUrl = (returnTo?: string) =>
+  apiFetch<{ url: string }>(`/auth/google/connect${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`);
 
 export const listGoogleCalendars = () => apiFetch<GoogleCalendarOption[]>("/calendar/google/calendars");
 

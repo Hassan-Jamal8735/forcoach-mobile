@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Text, View } from "react-native";
-import * as WebBrowser from "expo-web-browser";
 import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { OnboardingStackParamList } from "../../navigation/onboarding-types";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
 import { ConnectFeedSheet, PLATFORMS, PlatformBadge, type PlatformKey } from "../../components/ConnectFeedSheet";
 import { useOnboarding } from "../../context/OnboardingContext";
-import { getGoogleConnectUrl, getGoogleStatus } from "../../lib/api/sync";
+import { getGoogleConnectUrl } from "../../lib/api/sync";
+import { runReturnFlow } from "../../lib/return-flow";
 import { Banner, Button, Card, ListRow } from "../../components/ui";
 import { colors } from "../../theme/colors";
 
@@ -24,10 +24,9 @@ export function ConnectPlatformsScreen({ navigation }: Props) {
     setGoogleBusy(true);
     setError(null);
     try {
-      const { url } = await getGoogleConnectUrl();
-      await WebBrowser.openBrowserAsync(url);
-      const status = await getGoogleStatus();
-      if (status.connected) setConnected((c) => [...c, "google"]);
+      const result = await runReturnFlow((returnTo) => getGoogleConnectUrl(returnTo));
+      if (result?.google === "connected") setConnected((c) => [...c, "google"]);
+      else if (result) setError("Google Calendar couldn't be connected. Please try again.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not connect Google Calendar");
     } finally {

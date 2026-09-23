@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Linking, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { OnboardingStackParamList } from "../../navigation/onboarding-types";
 import { OnboardingLayout } from "../../components/OnboardingLayout";
-import { createCheckoutSession, getBillingStatus, type Plan } from "../../lib/api/billing";
+import { createCheckoutSession, getBillingStatus, waitForActiveSubscription, type Plan } from "../../lib/api/billing";
+import { runReturnFlow } from "../../lib/return-flow";
 import { Banner, Button, Segmented } from "../../components/ui";
 import { colors } from "../../theme/colors";
 
@@ -34,9 +35,15 @@ export function ChoosePlanScreen({ navigation }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const { url } = await createCheckoutSession(plan);
-      await Linking.openURL(url);
-      navigation.navigate("Done");
+      const result = await runReturnFlow((returnTo) => createCheckoutSession(plan, returnTo));
+      // The server is the source of truth — never assume payment from the redirect alone.
+      const started = await waitForActiveSubscription(result?.billing === "success" ? 10000 : 1500);
+      if (started) {
+        setSubscribed(true);
+        navigation.navigate("Done");
+      } else {
+        setError("Checkout wasn't completed, so your trial hasn't started. Try again, or choose \"Decide later\".");
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't start checkout — you can do this later from Settings.");
     } finally {

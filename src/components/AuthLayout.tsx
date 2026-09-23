@@ -9,9 +9,7 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.brand}>
-            <View style={styles.logoWrap}>
-              <Image source={require("../../assets/brand-logo.png")} style={styles.logo} resizeMode="contain" />
-            </View>
+            <Image source={require("../../assets/brand-mark.png")} style={styles.logo} resizeMode="contain" />
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.subtitle}>{subtitle}</Text>
           </View>
@@ -36,21 +34,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { flexGrow: 1, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 24 },
   brand: { alignItems: "center", marginBottom: 32 },
-  logoWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 22,
-    backgroundColor: colors.card,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 18,
-    shadowColor: "#1c1c1c",
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-  },
-  logo: { width: 40, height: 40 },
+  logo: { width: 96, height: 70, marginBottom: 22 },
   title: { fontSize: 28, fontWeight: "800", color: colors.foreground, letterSpacing: -0.5, textAlign: "center" },
   subtitle: { fontSize: 15, color: colors.mutedForeground, marginTop: 6, textAlign: "center" },
   divider: { flexDirection: "row", alignItems: "center", gap: 12, marginVertical: 20 },

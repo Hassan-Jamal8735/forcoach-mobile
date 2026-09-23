@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import * as WebBrowser from "expo-web-browser";
 import { Ionicons } from "@expo/vector-icons";
 import {
   deleteIcsFeed,
@@ -18,6 +17,7 @@ import {
   type IcsFeed,
 } from "../../lib/api/sync";
 import { listStudios, type Studio } from "../../lib/api/studios";
+import { runReturnFlow } from "../../lib/return-flow";
 import { Banner, Button, Card, ListRow, Loading, SectionLabel, StackScreen } from "../../components/ui";
 import { SelectSheet } from "../../components/Pickers";
 import { ConnectFeedSheet, PLATFORMS, PlatformBadge, type PlatformKey } from "../../components/ConnectFeedSheet";
@@ -76,10 +76,10 @@ export function CalendarSyncScreen() {
 
   const connectGoogle = () =>
     run("google-connect", async () => {
-      const { url } = await getGoogleConnectUrl();
-      // Google's consent screen redirects back to the website when done;
-      // the coach closes the sheet and we re-check the connection status.
-      await WebBrowser.openBrowserAsync(url);
+      const result = await runReturnFlow((returnTo) => getGoogleConnectUrl(returnTo));
+      if (!result) return;
+      if (result.google !== "connected") throw new Error("Google Calendar couldn't be connected. Please try again.");
+      return "Google Calendar connected — now choose which calendar to import.";
     });
 
   const disconnectGoogle = () =>
