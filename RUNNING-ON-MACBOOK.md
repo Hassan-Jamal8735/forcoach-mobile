@@ -26,8 +26,8 @@ gets run here.
    ```
    Then fill in:
    ```
-   EXPO_PUBLIC_SUPABASE_URL=https://iembgvawlrqomaxohbhi.supabase.co
-   EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_pD6i2sqzvJF3HZhgCjd2vQ_vY7HZICQ
+   EXPO_PUBLIC_SUPABASE_URL=https://db.forcoach.io
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg2MTM5MzQ0LCJleHAiOjIxMDE0OTkzNDR9.BjLCT_s6L3n8Wy7W_lkXoa3QgP-1yG4kZKDO8myidJA
    EXPO_PUBLIC_API_URL=https://api.forcoach.io
    ```
 
