@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AuthStackParamList } from "../navigation/auth-types";
 import { supabase } from "../lib/supabase";
@@ -98,7 +99,7 @@ export function RegisterScreen({ navigation }: Props) {
             onChangeText={setPassword}
           />
           <TouchableOpacity onPress={() => setShowPassword((v) => !v)} hitSlop={8}>
-            <Text style={styles.showHide}>{showPassword ? "Hide" : "Show"}</Text>
+            <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color={colors.mutedForeground} />
           </TouchableOpacity>
         </View>
 
@@ -160,7 +161,6 @@ const styles = StyleSheet.create({
     paddingRight: 14,
   },
   passwordInput: { flex: 1, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: colors.foreground },
-  showHide: { fontSize: 13, fontWeight: "600", color: colors.accent },
   error: { color: colors.destructiveText, fontSize: 13, marginTop: 12 },
   button: {
     backgroundColor: colors.accent,

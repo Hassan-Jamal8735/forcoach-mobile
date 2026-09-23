@@ -9,12 +9,13 @@ import {
   View,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { CalendarStackParamList } from "../navigation/types";
 import { listEvents, type Event } from "../lib/api/events";
 import { listStudios, type Studio } from "../lib/api/studios";
 import { scheduleClassReminders } from "../lib/notifications";
-import { colors, studioColor } from "../theme/colors";
+import { colors, cardShadow, studioColor } from "../theme/colors";
 
 type Props = NativeStackScreenProps<CalendarStackParamList, "CalendarList">;
 
@@ -169,7 +170,7 @@ export function CalendarScreen({ navigation }: Props) {
               <Text style={styles.cardTitle}>{item.title}</Text>
               <Text style={styles.cardStudio}>{studioName(item.studio_id)}</Text>
             </View>
-            <Text style={styles.chevron}>{"›"}</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.mutedForeground} />
           </TouchableOpacity>
         )}
       />
@@ -178,7 +179,7 @@ export function CalendarScreen({ navigation }: Props) {
         style={styles.fab}
         onPress={() => navigation.navigate("EventForm", { event: undefined })}
       >
-        <Text style={styles.fabText}>+</Text>
+        <Ionicons name="add" size={28} color={colors.offWhite} />
       </TouchableOpacity>
     </View>
   );
@@ -205,7 +206,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  dayCircleSelected: { backgroundColor: colors.charcoal },
+  dayCircleSelected: { backgroundColor: colors.accent },
   dayNumber: { fontSize: 14, color: colors.foreground, fontWeight: "600" },
   dayNumberSelected: { color: colors.offWhite },
   dayNumberToday: { color: colors.accent },
@@ -229,12 +230,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
+    borderRadius: 14,
+    padding: 14,
     marginBottom: 10,
     gap: 12,
+    ...cardShadow,
   },
   cardTime: { width: 46, alignItems: "flex-start" },
   timeText: { fontSize: 12, color: colors.mutedForeground },
@@ -242,22 +242,20 @@ const styles = StyleSheet.create({
   cardMiddle: { flex: 1 },
   cardTitle: { fontSize: 15, fontWeight: "600", color: colors.foreground },
   cardStudio: { fontSize: 13, color: colors.mutedForeground, marginTop: 2 },
-  chevron: { fontSize: 18, color: colors.mutedForeground },
   fab: {
     position: "absolute",
     right: 20,
     bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.charcoal,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: colors.accent,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    shadowColor: colors.accent,
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    elevation: 5,
   },
-  fabText: { color: colors.offWhite, fontSize: 28, lineHeight: 30 },
 });

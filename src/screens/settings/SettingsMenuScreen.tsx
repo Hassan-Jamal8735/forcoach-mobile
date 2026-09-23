@@ -1,23 +1,25 @@
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { SettingsStackParamList } from "../../navigation/settings-types";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../context/AuthContext";
-import { colors } from "../../theme/colors";
+import { colors, cardShadow } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<SettingsStackParamList, "SettingsMenu">;
 
 export function SettingsMenuScreen({ navigation }: Props) {
   const { session, signOut } = useAuth();
 
-  const rows: { label: string; onPress: () => void }[] = [
-    { label: "Profile", onPress: () => navigation.navigate("Profile") },
+  const rows: { label: string; icon: keyof typeof Ionicons.glyphMap; onPress: () => void }[] = [
+    { label: "Profile", icon: "person-outline", onPress: () => navigation.navigate("Profile") },
     {
       label: "Studios & integrations",
+      icon: "link-outline",
       onPress: () => (navigation.getParent() as { navigate: (name: string) => void } | undefined)?.navigate("Studios"),
     },
-    { label: "Payment details", onPress: () => navigation.navigate("PaymentDetails") },
-    { label: "Notifications", onPress: () => navigation.navigate("Notifications") },
-    { label: "Currency", onPress: () => navigation.navigate("Currency") },
+    { label: "Payment details", icon: "card-outline", onPress: () => navigation.navigate("PaymentDetails") },
+    { label: "Notifications", icon: "notifications-outline", onPress: () => navigation.navigate("Notifications") },
+    { label: "Currency", icon: "cash-outline", onPress: () => navigation.navigate("Currency") },
   ];
 
   function handleLogOut() {
@@ -39,8 +41,11 @@ export function SettingsMenuScreen({ navigation }: Props) {
             style={[styles.row, i < rows.length - 1 && styles.rowBorder]}
             onPress={row.onPress}
           >
+            <View style={styles.rowIcon}>
+              <Ionicons name={row.icon} size={18} color={colors.accent} />
+            </View>
             <Text style={styles.rowLabel}>{row.label}</Text>
-            <Text style={styles.chevron}>{"›"}</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.mutedForeground} />
           </TouchableOpacity>
         ))}
       </View>
@@ -58,21 +63,27 @@ const styles = StyleSheet.create({
   email: { fontSize: 13, color: colors.mutedForeground, marginTop: 4, marginBottom: 20 },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: 16,
     overflow: "hidden",
+    ...cardShadow,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingVertical: 14,
     paddingHorizontal: 16,
+    gap: 12,
+  },
+  rowIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: colors.accentLight,
+    alignItems: "center",
+    justifyContent: "center",
   },
   rowBorder: { borderBottomWidth: 1, borderColor: colors.border },
-  rowLabel: { fontSize: 15, color: colors.foreground },
-  chevron: { fontSize: 18, color: colors.mutedForeground },
+  rowLabel: { flex: 1, fontSize: 15, color: colors.foreground },
   logoutBtn: {
     marginTop: 24,
     backgroundColor: colors.card,

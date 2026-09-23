@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { getEarningsSummary, getEarningsTimeseries, type EarningsSummary, type TimeseriesPoint } from "../lib/api/earnings";
-import { colors, studioColor } from "../theme/colors";
+import { colors, cardShadow, studioColor } from "../theme/colors";
 
 type Period = "week" | "month" | "year";
 
@@ -177,13 +177,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     marginBottom: 8,
     gap: 10,
+    ...cardShadow,
   },
   avatar: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   avatarText: { fontSize: 11, fontWeight: "700", color: "#fff" },

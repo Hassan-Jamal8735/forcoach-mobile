@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { OnboardingStackParamList } from "../../navigation/onboarding-types";
+import { Ionicons } from "@expo/vector-icons";
 import { OnboardingHeader } from "../../components/OnboardingHeader";
 import { createCheckoutSession, type Plan } from "../../lib/api/billing";
 import { colors } from "../../theme/colors";
@@ -60,7 +61,7 @@ export function ChoosePlanScreen({ navigation }: Props) {
           </View>
           {FEATURES.map((f) => (
             <View key={f} style={styles.featureRow}>
-              <Text style={styles.check}>✓</Text>
+              <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
               <Text style={styles.featureText}>{f}</Text>
             </View>
           ))}
@@ -119,7 +120,6 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 16, fontWeight: "700", color: colors.foreground },
   cardPrice: { fontSize: 15, fontWeight: "700", color: colors.accent },
   featureRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 },
-  check: { color: colors.accent, fontWeight: "700" },
   featureText: { fontSize: 13, color: colors.foreground },
   toggleRow: { flexDirection: "row", backgroundColor: colors.secondary, borderRadius: 10, padding: 4, gap: 4 },
   toggleBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: "center" },

@@ -11,8 +11,9 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { InvoicesStackParamList } from "../../navigation/invoices-types";
+import { Ionicons } from "@expo/vector-icons";
 import { listInvoices, type Invoice, type InvoiceStatus } from "../../lib/api/invoices";
-import { colors } from "../../theme/colors";
+import { colors, cardShadow } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<InvoicesStackParamList, "InvoicesList">;
 
@@ -124,6 +125,7 @@ export function InvoicesListScreen({ navigation }: Props) {
       />
 
       <TouchableOpacity style={styles.createBtn} onPress={() => navigation.navigate("CreateInvoice")}>
+        <Ionicons name="add-circle" size={18} color={colors.offWhite} />
         <Text style={styles.createBtnText}>Create invoice</Text>
       </TouchableOpacity>
     </View>
@@ -149,11 +151,10 @@ const styles = StyleSheet.create({
   emptySubtitle: { fontSize: 13, color: colors.mutedForeground },
   card: {
     backgroundColor: colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: 14,
     padding: 14,
     marginBottom: 10,
+    ...cardShadow,
   },
   cardTop: { flexDirection: "row", justifyContent: "space-between", marginBottom: 2 },
   invoiceNumber: { fontSize: 15, fontWeight: "600", color: colors.foreground },
@@ -168,10 +169,18 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     bottom: 20,
-    backgroundColor: colors.charcoal,
-    borderRadius: 12,
+    backgroundColor: colors.accent,
+    borderRadius: 14,
     paddingVertical: 16,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    shadowColor: colors.accent,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   createBtnText: { color: colors.offWhite, fontSize: 15, fontWeight: "600" },
 });

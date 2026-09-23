@@ -8,12 +8,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { OnboardingStackParamList } from "../../navigation/onboarding-types";
 import { OnboardingHeader } from "../../components/OnboardingHeader";
 import { useOnboarding } from "../../context/OnboardingContext";
 import { createStudio, deleteStudio } from "../../lib/api/studios";
-import { colors } from "../../theme/colors";
+import { colors, cardShadow } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "AddStudios">;
 
@@ -102,7 +103,7 @@ export function AddStudiosScreen({ navigation }: Props) {
                   </View>
                   <Text style={styles.studioName}>{item.name}</Text>
                   <TouchableOpacity onPress={() => handleRemove(item.id)} hitSlop={8}>
-                    <Text style={styles.remove}>×</Text>
+                    <Ionicons name="close-circle" size={20} color={colors.mutedForeground} />
                   </TouchableOpacity>
                 </View>
               )}
@@ -151,13 +152,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
     marginBottom: 8,
     gap: 10,
+    ...cardShadow,
   },
   avatar: {
     width: 32,
@@ -169,7 +169,6 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 12, fontWeight: "700", color: colors.accent },
   studioName: { flex: 1, fontSize: 15, color: colors.foreground },
-  remove: { fontSize: 20, color: colors.mutedForeground, paddingHorizontal: 4 },
   nextBtn: {
     backgroundColor: colors.charcoal,
     borderRadius: 12,

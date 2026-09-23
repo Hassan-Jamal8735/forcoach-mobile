@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useOnboarding } from "../../context/OnboardingContext";
 import { supabase } from "../../lib/supabase";
 import { listEvents } from "../../lib/api/events";
@@ -47,7 +48,7 @@ export function DoneScreen() {
       <View style={styles.container}>
         <View style={styles.center}>
           <View style={styles.checkCircle}>
-            <Text style={styles.checkMark}>✓</Text>
+            <Ionicons name="checkmark" size={36} color={colors.accent} />
           </View>
           <Text style={styles.title}>You're all set!</Text>
           <Text style={styles.subtitle}>
@@ -83,7 +84,7 @@ export function DoneScreen() {
     <View style={styles.container}>
       <View style={styles.center}>
         <View style={styles.checkCircle}>
-          <Text style={styles.checkMark}>✓</Text>
+          <Ionicons name="checkmark" size={36} color={colors.accent} />
         </View>
         <Text style={styles.title}>You're all set!</Text>
         <Text style={styles.subtitle}>
@@ -114,7 +115,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 20,
   },
-  checkMark: { fontSize: 32, color: colors.accent, fontWeight: "700" },
   title: { fontSize: 24, fontWeight: "700", color: colors.foreground },
   subtitle: { fontSize: 14, color: colors.mutedForeground, textAlign: "center", marginTop: 8 },
   goBtn: {

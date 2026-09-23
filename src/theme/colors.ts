@@ -41,3 +41,13 @@ export function studioColor(studioId: string | null | undefined): string {
   }
   return STUDIO_DOT_COLORS[hash % STUDIO_DOT_COLORS.length];
 }
+
+// A soft, modern card elevation — used instead of a hard border on its own
+// so surfaces read as "raised" rather than flatly outlined.
+export const cardShadow = {
+  shadowColor: "#1c1c1c",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.06,
+  shadowRadius: 8,
+  elevation: 2,
+};

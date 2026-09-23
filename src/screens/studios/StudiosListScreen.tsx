@@ -11,8 +11,9 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { StudiosStackParamList } from "../../navigation/studios-types";
+import { Ionicons } from "@expo/vector-icons";
 import { listStudios, type Studio } from "../../lib/api/studios";
-import { colors, studioColor } from "../../theme/colors";
+import { colors, cardShadow, studioColor } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<StudiosStackParamList, "StudiosList">;
 
@@ -93,6 +94,7 @@ export function StudiosListScreen({ navigation }: Props) {
                 <Text style={styles.inactiveText}>Inactive</Text>
               </View>
             )}
+            <Ionicons name="chevron-forward" size={18} color={colors.mutedForeground} />
           </TouchableOpacity>
         )}
       />
@@ -100,6 +102,7 @@ export function StudiosListScreen({ navigation }: Props) {
         style={styles.addBtn}
         onPress={() => navigation.navigate("StudioForm", { studio: undefined })}
       >
+        <Ionicons name="add-circle" size={18} color={colors.offWhite} />
         <Text style={styles.addBtnText}>Add studio</Text>
       </TouchableOpacity>
     </View>
@@ -120,12 +123,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
+    borderRadius: 14,
+    padding: 14,
     marginBottom: 10,
     gap: 12,
+    ...cardShadow,
   },
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   avatarText: { color: "#fff", fontSize: 13, fontWeight: "700" },
@@ -139,10 +141,18 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     bottom: 20,
-    backgroundColor: colors.charcoal,
-    borderRadius: 12,
+    backgroundColor: colors.accent,
+    borderRadius: 14,
     paddingVertical: 16,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    shadowColor: colors.accent,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   addBtnText: { color: colors.offWhite, fontSize: 15, fontWeight: "600" },
 });

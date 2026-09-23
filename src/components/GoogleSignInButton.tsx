@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { signInWithGoogle } from "../lib/google-auth";
 import { colors } from "../theme/colors";
 
@@ -21,7 +22,10 @@ export function GoogleSignInButton() {
         {loading ? (
           <ActivityIndicator color={colors.foreground} />
         ) : (
-          <Text style={styles.buttonText}>Continue with Google</Text>
+          <>
+            <Ionicons name="logo-google" size={18} color="#4285F4" />
+            <Text style={styles.buttonText}>Continue with Google</Text>
+          </>
         )}
       </TouchableOpacity>
       {error && <Text style={styles.error}>{error}</Text>}
@@ -35,7 +39,10 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 10,
     paddingVertical: 14,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
     backgroundColor: colors.card,
   },
   buttonText: { color: colors.foreground, fontSize: 15, fontWeight: "600" },
