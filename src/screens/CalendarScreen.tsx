@@ -8,7 +8,7 @@ import type { CalendarStackParamList } from "../navigation/types";
 import { listEvents, type Event } from "../lib/api/events";
 import { listStudios, type Studio } from "../lib/api/studios";
 import { scheduleClassReminders } from "../lib/notifications";
-import { Badge, Banner, EmptyState, Fab, IconButton, Loading, ScreenHeader } from "../components/ui";
+import { Banner, EmptyState, Fab, IconButton, Loading, ScreenHeader } from "../components/ui";
 import { colors, cardShadow, studioColor } from "../theme/colors";
 
 type Props = NativeStackScreenProps<CalendarStackParamList, "CalendarList">;
@@ -26,8 +26,18 @@ function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-function time(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+// Splits "9:00 AM" into "9:00" + "AM" so the period can be set smaller;
+// 24-hour locales ("09:00") simply have no suffix.
+function timeParts(iso: string) {
+  const [main, ...rest] = new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }).split(/\s/);
+  return { main, suffix: rest.join(" ") };
+}
+
+function duration(startIso: string, endIso: string) {
+  const mins = Math.round((Date.parse(endIso) - Date.parse(startIso)) / 60000);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return h && m ? `${h}h ${m}m` : h ? `${h}h` : `${m}m`;
 }
 
 export function CalendarScreen({ navigation }: Props) {
@@ -160,33 +170,56 @@ export function CalendarScreen({ navigation }: Props) {
         }
         renderItem={({ item }) => {
           const studio = studioName(item.studio_id);
+          const color = studioColor(item.studio_id);
+          const start = timeParts(item.start_time);
+          const end = timeParts(item.end_time);
+          const past = Date.parse(item.end_time) < Date.now();
           return (
-            <TouchableOpacity
-              style={styles.card}
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate("EventForm", { event: item })}
-            >
+            <View style={styles.row}>
               <View style={styles.timeCol}>
-                <Text style={styles.timeStart}>{time(item.start_time)}</Text>
-                <Text style={styles.timeEnd}>{time(item.end_time)}</Text>
+                <Text style={styles.timeMain}>
+                  {start.main}
+                  {start.suffix ? <Text style={styles.timeSuffix}> {start.suffix}</Text> : null}
+                </Text>
+                <Text style={styles.timeEnd}>
+                  {end.main}
+                  {end.suffix ? ` ${end.suffix}` : ""}
+                </Text>
               </View>
-              <View style={[styles.bar, { backgroundColor: studioColor(item.studio_id) }]} />
-              <View style={{ flex: 1 }}>
+              <TouchableOpacity
+                style={[styles.card, { backgroundColor: `${color}14`, borderLeftColor: color }, past && styles.cardPast]}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate("EventForm", { event: item })}
+              >
                 <Text style={styles.title} numberOfLines={1}>
                   {item.title}
                 </Text>
-                {studio ? (
-                  <Text style={styles.studio} numberOfLines={1}>
-                    {studio}
+                <View style={styles.studioRow}>
+                  <Ionicons name={studio ? "location-outline" : "alert-circle-outline"} size={13} color={studio ? colors.mutedForeground : colors.destructive} />
+                  <Text style={[styles.studio, !studio && { color: colors.destructive }]} numberOfLines={1}>
+                    {studio ?? "No studio assigned"}
                   </Text>
-                ) : (
-                  <View style={{ marginTop: 4, alignSelf: "flex-start" }}>
-                    <Badge label="Unassigned" tone="danger" />
+                </View>
+                <View style={styles.chips}>
+                  <View style={styles.chip}>
+                    <Ionicons name="time-outline" size={12} color={color} />
+                    <Text style={[styles.chipText, { color }]}>{duration(item.start_time, item.end_time)}</Text>
                   </View>
-                )}
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.mutedForeground} />
-            </TouchableOpacity>
+                  {item.rate_override != null && (
+                    <View style={styles.chip}>
+                      <Ionicons name="pricetag-outline" size={12} color={color} />
+                      <Text style={[styles.chipText, { color }]}>Custom rate</Text>
+                    </View>
+                  )}
+                  {past && (
+                    <View style={styles.chip}>
+                      <Ionicons name="checkmark-done" size={12} color={colors.mutedForeground} />
+                      <Text style={[styles.chipText, { color: colors.mutedForeground }]}>Done</Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            </View>
           );
         }}
       />
@@ -211,20 +244,32 @@ const styles = StyleSheet.create({
   summaryTitle: { fontSize: 17, fontWeight: "700", color: colors.foreground },
   summaryMeta: { fontSize: 13, color: colors.mutedForeground },
   list: { paddingHorizontal: 20, paddingBottom: 110, flexGrow: 1 },
+  row: { flexDirection: "row", gap: 12, marginBottom: 12 },
+  timeCol: { width: 70, paddingTop: 12, alignItems: "flex-end" },
+  timeMain: { fontSize: 15, fontWeight: "800", color: colors.foreground },
+  timeSuffix: { fontSize: 11, fontWeight: "700", color: colors.mutedForeground },
+  timeEnd: { fontSize: 12, color: colors.mutedForeground, marginTop: 3 },
   card: {
+    flex: 1,
+    borderRadius: 16,
+    borderLeftWidth: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 4,
+  },
+  cardPast: { opacity: 0.6 },
+  title: { fontSize: 16, fontWeight: "800", color: colors.foreground },
+  studioRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  studio: { fontSize: 13, color: colors.mutedForeground, flexShrink: 1 },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
+  chip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 4,
     backgroundColor: colors.card,
-    borderRadius: 18,
-    padding: 14,
-    marginBottom: 10,
-    ...cardShadow,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
-  timeCol: { width: 50 },
-  timeStart: { fontSize: 14, fontWeight: "700", color: colors.foreground },
-  timeEnd: { fontSize: 12, color: colors.mutedForeground, marginTop: 2 },
-  bar: { width: 4, alignSelf: "stretch", borderRadius: 2 },
-  title: { fontSize: 15, fontWeight: "700", color: colors.foreground },
-  studio: { fontSize: 13, color: colors.mutedForeground, marginTop: 3 },
+  chipText: { fontSize: 11, fontWeight: "700" },
 });
