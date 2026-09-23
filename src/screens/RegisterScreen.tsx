@@ -5,7 +5,7 @@ import type { AuthStackParamList } from "../navigation/auth-types";
 import { supabase } from "../lib/supabase";
 import { AuthLayout, Divider } from "../components/AuthLayout";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
-import { Banner, Button, EmptyState, Field } from "../components/ui";
+import { Banner, Button, Field } from "../components/ui";
 import { colors } from "../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Register">;
@@ -17,6 +17,8 @@ export function RegisterScreen({ navigation }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [code, setCode] = useState("");
+  const [info, setInfo] = useState<string | null>(null);
 
   async function handleSubmit() {
     setError(null);
@@ -40,11 +42,50 @@ export function RegisterScreen({ navigation }: Props) {
     setSentTo(email.trim());
   }
 
+  async function verifyCode() {
+    setError(null);
+    setInfo(null);
+    const token = code.replace(/\s/g, "");
+    if (!/^\d{6}$/.test(token)) return setError("Enter the 6-digit code from the email.");
+    setSubmitting(true);
+    const { error } = await supabase.auth.verifyOtp({ email: sentTo ?? "", token, type: "signup" });
+    setSubmitting(false);
+    // On success the auth listener picks up the new session and the app opens.
+    if (error) setError("That code is invalid or has expired. Try again or resend the email.");
+  }
+
+  async function resend() {
+    setError(null);
+    setInfo(null);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: sentTo ?? "",
+      options: { emailRedirectTo: "https://forcoach.io/auth/callback?redirectTo=%2Fdashboard" },
+    });
+    if (error) setError(error.message);
+    else setInfo("Confirmation email sent again.");
+  }
+
   if (sentTo) {
     return (
-      <AuthLayout title="Check your email" subtitle={`We sent a confirmation link to ${sentTo}`}>
-        <EmptyState icon="mail-unread-outline" title="Almost there" subtitle="Open the link to confirm your address, then come back and log in." />
-        <Button title="Back to login" onPress={() => navigation.navigate("Login")} />
+      <AuthLayout title="Check your email" subtitle={`We sent a 6-digit code to ${sentTo}`}>
+        {error && <Banner message={error} />}
+        {info && <Banner tone="success" message={info} />}
+        <Field
+          label="Confirmation code"
+          value={code}
+          onChangeText={(v) => setCode(v.replace(/\D/g, "").slice(0, 6))}
+          keyboardType="number-pad"
+          textContentType="oneTimeCode"
+          autoComplete="one-time-code"
+          placeholder="123456"
+          maxLength={6}
+          style={{ fontSize: 22, letterSpacing: 8, textAlign: "center", fontWeight: "700" }}
+        />
+        <Button title="Confirm & continue" onPress={verifyCode} loading={submitting} disabled={code.length !== 6} />
+        <Text style={styles.hint}>You can also tap the link in the email instead.</Text>
+        <Button title="Resend email" variant="ghost" onPress={resend} />
+        <Button title="Use a different email" variant="ghost" onPress={() => { setSentTo(null); setCode(""); setError(null); }} />
       </AuthLayout>
     );
   }
@@ -79,4 +120,5 @@ const styles = StyleSheet.create({
   link: { color: colors.accent, fontWeight: "700", fontSize: 14 },
   footer: { alignItems: "center", marginTop: 28 },
   footerText: { fontSize: 14, color: colors.mutedForeground },
+  hint: { fontSize: 13, color: colors.mutedForeground, textAlign: "center", marginTop: 14 },
 });
