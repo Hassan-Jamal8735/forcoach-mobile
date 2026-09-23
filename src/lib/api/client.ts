@@ -2,6 +2,16 @@ import { supabase } from "../supabase";
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3001";
 
+// Fired when the API says this coach needs a plan (HTTP 402), so the app can
+// swap to the subscribe screen wherever the coach happens to be.
+const subscriptionListeners = new Set<() => void>();
+export function onSubscriptionRequired(cb: () => void) {
+  subscriptionListeners.add(cb);
+  return () => {
+    subscriptionListeners.delete(cb);
+  };
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -58,6 +68,7 @@ export async function apiFetch<T>(
   const body = text ? JSON.parse(text) : null;
 
   if (!res.ok) {
+    if (res.status === 402) subscriptionListeners.forEach((cb) => cb());
     const message = Array.isArray(body?.message)
       ? body.message.join(", ")
       : (body?.message ?? "Request failed");

@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, AppState, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { RootTabParamList } from "./types";
 import { useAuth } from "../context/AuthContext";
@@ -13,6 +13,9 @@ import { SettingsNavigator } from "./SettingsNavigator";
 import { OnboardingNavigator } from "./OnboardingNavigator";
 import { supabase } from "../lib/supabase";
 import { listStudios } from "../lib/api/studios";
+import { getBillingStatus } from "../lib/api/billing";
+import { onSubscriptionRequired } from "../lib/api/client";
+import { SubscribeScreen } from "../screens/SubscribeScreen";
 import { colors } from "../theme/colors";
 import { BrandLogo } from "../components/BrandLogo";
 
@@ -132,6 +135,34 @@ export function RootNavigator() {
       .catch(() => setNeedsOnboarding(false));
   }, [userId, onboardingFlag]);
 
+  // null = not checked yet. Mirrors the website's subscribe gate; the API
+  // enforces the same rule, this just gives a proper screen instead of errors.
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
+
+  const checkAccess = useCallback(() => {
+    getBillingStatus()
+      .then((s) => setHasAccess(s.hasAccess))
+      // Fail open like the website: a network hiccup shouldn't lock a coach out
+      // (the API still refuses real data if they truly have no plan).
+      .catch(() => setHasAccess((prev) => prev ?? true));
+  }, []);
+
+  useEffect(() => {
+    if (!userId || needsOnboarding !== false) {
+      setHasAccess(null);
+      return;
+    }
+    checkAccess();
+    const appStateSub = AppState.addEventListener("change", (state) => {
+      if (state === "active") checkAccess();
+    });
+    const unsubscribe = onSubscriptionRequired(() => setHasAccess(false));
+    return () => {
+      appStateSub.remove();
+      unsubscribe();
+    };
+  }, [userId, needsOnboarding, checkAccess]);
+
   if (loading) return <Loading />;
 
   if (!session) {
@@ -143,6 +174,10 @@ export function RootNavigator() {
   }
 
   if (needsOnboarding === null) return <Loading />;
+  if (!needsOnboarding && hasAccess === null) return <Loading />;
+  if (!needsOnboarding && hasAccess === false) {
+    return <SubscribeScreen onAccessGranted={() => setHasAccess(true)} />;
+  }
 
   return (
     <NavigationContainer theme={navigationTheme}>
