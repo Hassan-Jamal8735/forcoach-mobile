@@ -34,7 +34,7 @@ export function StudiosListScreen({ navigation }: Props) {
   );
 
   function rateLabel(s: Studio) {
-    if (s.compensation_type === "tiered") return "Tiered by attendance";
+    if (s.compensation_type === "tiered") return "Per attendance";
     if (s.compensation_value == null) return "No rate set";
     return `${symbol}${s.compensation_value} ${s.compensation_type === "hourly" ? "per hour" : "per class"}`;
   }

@@ -144,12 +144,12 @@ export function EventFormScreen({ route, navigation }: Props) {
       />
       {studio?.compensation_type === "tiered" && (
         <Field
-          label="Attendance"
+          label="Number of clients"
           value={attendance}
           onChangeText={setAttendance}
           keyboardType="number-pad"
           placeholder="Number of clients"
-          hint="Used to pick the right attendance tier."
+          hint="How many clients came. This sets your pay for the class."
         />
       )}
       <Card padded={false}>

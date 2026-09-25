@@ -14,15 +14,19 @@ export type Studio = {
   notes: string | null;
   compensation_type: CompensationType;
   compensation_value: number | null;
+  rate_tiers?: { min_attendance: number; max_attendance: number | null; rate: number }[];
   status: "active" | "inactive";
   created_at: string;
   updated_at: string;
 };
 
+export type RateTierInput = { minAttendance: number; maxAttendance?: number; rate: number };
+
 export type StudioInput = {
   name: string;
   compensationType: CompensationType;
   compensationValue?: number;
+  rateTiers?: RateTierInput[];
   status?: "active" | "inactive";
   contactPerson?: string;
   email?: string;

@@ -92,6 +92,7 @@ export function CalendarScreen({ navigation }: Props) {
   }, [events]);
 
   const studioName = (id: string | null) => studios.find((s) => s.id === id)?.name;
+  const isTiered = (id: string | null) => studios.find((s) => s.id === id)?.compensation_type === "tiered";
 
   function shiftWeek(delta: number) {
     const d = new Date(selected);
@@ -208,6 +209,12 @@ export function CalendarScreen({ navigation }: Props) {
                     <View style={styles.chip}>
                       <Ionicons name="pricetag-outline" size={12} color={color} />
                       <Text style={[styles.chipText, { color }]}>Custom rate</Text>
+                    </View>
+                  )}
+                  {past && isTiered(item.studio_id) && item.attendance_count == null && (
+                    <View style={[styles.chip, { backgroundColor: colors.destructiveMuted }]}>
+                      <Ionicons name="people-outline" size={12} color={colors.destructive} />
+                      <Text style={[styles.chipText, { color: colors.destructive }]}>Add attendance</Text>
                     </View>
                   )}
                   {past && (

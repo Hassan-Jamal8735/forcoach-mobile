@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Alert, Switch, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { SettingsStackParamList } from "../../navigation/settings-types";
-import { createStudio, deleteStudio, updateStudio, type CompensationType } from "../../lib/api/studios";
+import { createStudio, deleteStudio, updateStudio } from "../../lib/api/studios";
+import { TierEditor, parseTiers, tiersFromStudio, type TierRow } from "../../components/TierEditor";
 import { useCurrency } from "../../lib/currency";
 import { Banner, Button, Card, Field, ListRow, SectionLabel, Segmented, StackScreen } from "../../components/ui";
 import { colors } from "../../theme/colors";
@@ -12,11 +13,15 @@ type Props = NativeStackScreenProps<SettingsStackParamList, "StudioForm">;
 export function StudioFormScreen({ route, navigation }: Props) {
   const existing = route.params?.studio;
   const isEditing = !!existing;
-  const isTiered = existing?.compensation_type === "tiered";
+  const wasHourly = existing?.compensation_type === "hourly";
   const { symbol } = useCurrency();
 
   const [name, setName] = useState(existing?.name ?? "");
-  const [type, setType] = useState<CompensationType>(existing?.compensation_type === "hourly" ? "hourly" : "per_class");
+  // Hourly is no longer offered; an existing hourly studio keeps it until a new type is chosen.
+  const [type, setType] = useState<"per_class" | "tiered" | null>(
+    existing?.compensation_type === "tiered" ? "tiered" : wasHourly ? null : "per_class",
+  );
+  const [tiers, setTiers] = useState<TierRow[]>(() => tiersFromStudio(existing));
   const [rate, setRate] = useState(existing?.compensation_value != null ? String(existing.compensation_value) : "");
   const [active, setActive] = useState(existing?.status !== "inactive");
   const [contactPerson, setContactPerson] = useState(existing?.contact_person ?? "");
@@ -33,8 +38,16 @@ export function StudioFormScreen({ route, navigation }: Props) {
 
   async function handleSave() {
     if (!name.trim()) return setError("Give the studio a name.");
-    const value = rate.trim() ? Number(rate.replace(",", ".")) : undefined;
-    if (!isTiered && (value == null || Number.isNaN(value) || value < 0)) return setError("Enter a valid rate.");
+    let pay: Record<string, unknown> = {};
+    if (type === "per_class") {
+      const value = rate.trim() ? Number(rate.replace(",", ".")) : NaN;
+      if (Number.isNaN(value) || value < 0) return setError("Enter a valid rate per class.");
+      pay = { compensationType: "per_class", compensationValue: value };
+    } else if (type === "tiered") {
+      const parsed = parseTiers(tiers);
+      if (parsed.error) return setError(parsed.error);
+      pay = { compensationType: "tiered", rateTiers: parsed.tiers };
+    }
     setError(null);
     setSaving(true);
     const contact = {
@@ -48,12 +61,12 @@ export function StudioFormScreen({ route, navigation }: Props) {
       if (isEditing && existing) {
         await updateStudio(existing.id, {
           name: name.trim(),
-          ...(isTiered ? {} : { compensationType: type, compensationValue: value }),
+          ...pay,
           status: active ? "active" : "inactive",
           ...contact,
         });
       } else {
-        await createStudio({ name: name.trim(), compensationType: type, compensationValue: value, ...contact });
+        await createStudio({ name: name.trim(), ...(pay as { compensationType: "per_class" | "tiered" }), ...contact });
       }
       navigation.goBack();
     } catch (e) {
@@ -90,27 +103,25 @@ export function StudioFormScreen({ route, navigation }: Props) {
       <Field label="Studio name" value={name} onChangeText={setName} placeholder="e.g. Pilates Social Club" />
 
       <SectionLabel>Pay</SectionLabel>
-      {isTiered ? (
-        <Banner tone="info" message="This studio pays by attendance tiers. You can edit its tiers on forcoach.io." />
-      ) : (
-        <>
-          <Segmented
-            options={[
-              { value: "per_class", label: "Per class" },
-              { value: "hourly", label: "Hourly" },
-            ]}
-            value={type}
-            onChange={setType}
-          />
-          <View style={{ height: 12 }} />
-          <Field
-            label={type === "hourly" ? `Rate per hour (${symbol})` : `Rate per class (${symbol})`}
-            value={rate}
-            onChangeText={setRate}
-            placeholder="0"
-            keyboardType="decimal-pad"
-          />
-        </>
+      {wasHourly && type === null && (
+        <Banner tone="info" message={`This studio is currently paid hourly (${symbol}${existing?.compensation_value ?? 0} per hour). Choose a pay type below to change it.`} />
+      )}
+      <Segmented
+        options={[
+          { value: "per_class", label: "Per class" },
+          { value: "tiered", label: "Per attendance" },
+        ]}
+        value={type ?? ("" as "per_class")}
+        onChange={setType}
+      />
+      <View style={{ height: 14 }} />
+      {type === "per_class" && (
+        <Field label={`Rate per class (${symbol.trim()})`} value={rate} onChangeText={setRate} placeholder="0" keyboardType="decimal-pad" />
+      )}
+      {type === "tiered" && (
+        <Card>
+          <TierEditor rows={tiers} onChange={setTiers} symbol={symbol.trim()} />
+        </Card>
       )}
 
       {isEditing && (
