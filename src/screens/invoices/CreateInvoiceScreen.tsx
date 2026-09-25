@@ -86,7 +86,7 @@ export function CreateInvoiceScreen({ navigation }: Props) {
   if (studios.length === 0) {
     return (
       <StackScreen>
-        <EmptyState icon="business-outline" title="Add a studio first" subtitle="Invoices are created per studio. Add one from Settings → Studios." />
+        <EmptyState icon="business-outline" title="Add a studio first" subtitle="Invoices are created per studio. Add one in Settings, under Studios." />
       </StackScreen>
     );
   }

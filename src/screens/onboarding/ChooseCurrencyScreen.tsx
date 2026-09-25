@@ -6,14 +6,10 @@ import { OnboardingLayout } from "../../components/OnboardingLayout";
 import { useOnboarding } from "../../context/OnboardingContext";
 import { Button, Card, ListRow } from "../../components/ui";
 import { colors } from "../../theme/colors";
+import { CURRENCIES } from "../../lib/currency";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "ChooseCurrency">;
 
-const CURRENCIES = [
-  { code: "EUR", label: "Euro (EUR)", symbol: "€" },
-  { code: "USD", label: "US Dollar (USD)", symbol: "$" },
-  { code: "GBP", label: "British Pound (GBP)", symbol: "£" },
-];
 
 export function ChooseCurrencyScreen({ navigation }: Props) {
   const { currency, setCurrency } = useOnboarding();
@@ -30,8 +26,8 @@ export function ChooseCurrencyScreen({ navigation }: Props) {
         {CURRENCIES.map((c, i) => (
           <ListRow
             key={c.code}
-            left={<Text style={{ width: 34, textAlign: "center", fontSize: 22, color: colors.accent }}>{c.symbol}</Text>}
-            label={c.label}
+            left={<Text style={{ width: 44, textAlign: "center", fontSize: c.symbol.length > 1 ? 13 : 22, fontWeight: "700", color: colors.accent }}>{c.symbol.trim()}</Text>}
+            label={`${c.label} (${c.code})`}
             onPress={() => setCurrency(c.code)}
             last={i === CURRENCIES.length - 1}
             right={

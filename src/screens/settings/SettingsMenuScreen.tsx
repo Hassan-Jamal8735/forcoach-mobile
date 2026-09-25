@@ -8,7 +8,6 @@ import { colors } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<SettingsStackParamList, "SettingsMenu">;
 
-const CURRENCY_LABEL: Record<string, string> = { EUR: "Euro (€)", USD: "US Dollar ($)", GBP: "Pound (£)" };
 
 export function SettingsMenuScreen({ navigation }: Props) {
   const { session, signOut } = useAuth();
@@ -60,7 +59,7 @@ export function SettingsMenuScreen({ navigation }: Props) {
         <ListRow
           icon="cash-outline"
           label="Currency"
-          value={CURRENCY_LABEL[currency] ?? currency}
+          value={currency}
           onPress={() => navigation.navigate("Currency")}
           last
         />

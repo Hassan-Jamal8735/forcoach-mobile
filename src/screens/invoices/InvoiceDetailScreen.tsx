@@ -145,7 +145,7 @@ export function InvoiceDetailScreen({ route, navigation }: Props) {
         <Text style={styles.total}>{format(invoice.total)}</Text>
         <Text style={styles.studio}>{invoice.studio_name}</Text>
         <View style={styles.metaRow}>
-          <Meta icon="calendar-outline" text={`${longDate(invoice.period_start)} – ${longDate(invoice.period_end)}`} />
+          <Meta icon="calendar-outline" text={`${longDate(invoice.period_start)} to ${longDate(invoice.period_end)}`} />
           <Meta icon="time-outline" text={`Due ${longDate(invoice.due_date)}`} />
         </View>
       </Card>

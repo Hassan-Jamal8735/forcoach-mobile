@@ -5,12 +5,8 @@ import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 import { Card, ListRow, StackScreen } from "../../components/ui";
 import { colors } from "../../theme/colors";
+import { CURRENCIES } from "../../lib/currency";
 
-const CURRENCIES = [
-  { code: "EUR", label: "Euro", symbol: "€" },
-  { code: "USD", label: "US Dollar", symbol: "$" },
-  { code: "GBP", label: "British Pound", symbol: "£" },
-];
 
 export function CurrencyScreen() {
   const { session } = useAuth();
@@ -33,7 +29,7 @@ export function CurrencyScreen() {
         {CURRENCIES.map((c, i) => (
           <ListRow
             key={c.code}
-            left={<Text style={{ width: 34, textAlign: "center", fontSize: 20, color: colors.accent }}>{c.symbol}</Text>}
+            left={<Text style={{ width: 44, textAlign: "center", fontSize: c.symbol.length > 1 ? 13 : 22, fontWeight: "700", color: colors.accent }}>{c.symbol.trim()}</Text>}
             label={`${c.label} (${c.code})`}
             onPress={() => select(c.code)}
             last={i === CURRENCIES.length - 1}

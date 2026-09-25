@@ -181,6 +181,7 @@ export function Button({
   loading,
   disabled,
   icon,
+  trailingIcon,
   style,
 }: {
   title: string;
@@ -189,6 +190,7 @@ export function Button({
   loading?: boolean;
   disabled?: boolean;
   icon?: IconName;
+  trailingIcon?: IconName;
   style?: StyleProp<ViewStyle>;
 }) {
   const v = BUTTON_VARIANTS[variant];
@@ -205,6 +207,7 @@ export function Button({
         <>
           {icon && <Ionicons name={icon} size={18} color={v.fg} />}
           <Text style={[styles.buttonText, { color: v.fg }]}>{title}</Text>
+          {trailingIcon && <Ionicons name={trailingIcon} size={20} color={v.fg} style={styles.trailingIcon} />}
         </>
       )}
     </TouchableOpacity>
@@ -224,14 +227,16 @@ export function Field({
   hint,
   error,
   secure,
+  icon,
   style,
   ...props
-}: TextInputProps & { label?: string; hint?: string; error?: string | null; secure?: boolean }) {
+}: TextInputProps & { label?: string; hint?: string; error?: string | null; secure?: boolean; icon?: IconName }) {
   const [hidden, setHidden] = useState(true);
   return (
     <View style={styles.field}>
       {label ? <Text style={styles.fieldLabel}>{label}</Text> : null}
-      <View style={[styles.inputWrap, error ? { borderColor: colors.destructive } : null]}>
+      <View style={[styles.inputWrap, icon && styles.inputWrapTall, error ? { borderColor: colors.destructive } : null]}>
+        {icon && <Ionicons name={icon} size={20} color={colors.foreground} style={{ marginRight: 4 }} />}
         <TextInput
           placeholderTextColor={colors.mutedForeground}
           style={[styles.input, style]}
@@ -416,6 +421,7 @@ const styles = StyleSheet.create({
   },
   buttonGlow: { shadowColor: colors.accent, shadowOpacity: 0.28, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
   buttonText: { fontSize: 15, fontWeight: "700" },
+  trailingIcon: { position: "absolute", right: 18 },
   disabled: { opacity: 0.55 },
   field: { marginBottom: spacing.md },
   fieldLabel: { fontSize: 13, fontWeight: "600", color: colors.foreground, marginBottom: 6, marginLeft: 2 },
@@ -430,6 +436,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   input: { flex: 1, fontSize: 15, color: colors.foreground, paddingVertical: 13 },
+  inputWrapTall: { paddingVertical: 4, borderRadius: 16, paddingHorizontal: 16 },
   fieldHint: { fontSize: 12, color: colors.mutedForeground, marginTop: 6, marginLeft: 2 },
   fieldError: { fontSize: 12, color: colors.destructiveText, marginTop: 6, marginLeft: 2 },
   segmented: { flexDirection: "row", backgroundColor: colors.secondary, borderRadius: radius.sm + 2, padding: 4, gap: 4 },

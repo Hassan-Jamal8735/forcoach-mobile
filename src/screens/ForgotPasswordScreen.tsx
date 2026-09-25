@@ -28,6 +28,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
 
   return (
     <AuthLayout
+      onBack={() => navigation.goBack()}
       title={sent ? "Check your email" : "Reset password"}
       subtitle={sent ? `If an account exists for ${email.trim()}, a reset link is on its way.` : "We'll email you a link to set a new password."}
     >
@@ -37,15 +38,15 @@ export function ForgotPasswordScreen({ navigation }: Props) {
         <>
           {error && <Banner message={error} />}
           <Field
-            label="Email"
+            icon="mail-outline"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
             autoComplete="email"
-            placeholder="you@example.com"
+            placeholder="Email address"
           />
-          <Button title="Send reset link" onPress={handleSubmit} loading={submitting} style={{ marginTop: 8 }} />
+          <Button title="Send reset link" variant="dark" trailingIcon="arrow-forward" onPress={handleSubmit} loading={submitting} style={{ marginTop: 8 }} />
         </>
       )}
       <TouchableOpacity style={styles.footer} onPress={() => navigation.navigate("Login")}>
@@ -56,6 +57,6 @@ export function ForgotPasswordScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  link: { color: colors.accent, fontWeight: "700", fontSize: 14 },
+  link: { color: colors.foreground, fontWeight: "700", fontSize: 14, textDecorationLine: "underline" },
   footer: { alignItems: "center", marginTop: 28 },
 });

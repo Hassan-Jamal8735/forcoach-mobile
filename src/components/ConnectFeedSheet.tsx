@@ -28,7 +28,7 @@ export const PLATFORMS: {
     steps: [
       "Open the Mindbody Business app (not the client booking app).",
       "Log in with your staff login.",
-      "Tap More → Settings.",
+      "Tap More, then Settings.",
       "Under Schedule, tap Export My Schedule.",
       "Tap Copy Link and paste it below.",
     ],
@@ -106,7 +106,7 @@ export function ConnectFeedSheet({
     if (!platform) return;
     const trimmed = url.trim();
     if (!/^(https?|webcal):\/\//i.test(trimmed)) {
-      setError("Paste the full link — it should start with https:// or webcal://");
+      setError("Paste the full link. It should start with https:// or webcal://");
       return;
     }
     setBusy(true);
@@ -173,7 +173,7 @@ export function ConnectFeedSheet({
                   />
                 )}
                 <Text style={styles.note}>
-                  Read-only: FORCOACH only reads your teaching schedule from this link — we never ask for your
+                  Read-only: FORCOACH only reads your teaching schedule from this link. We never ask for your
                   {" "}{platform.label} password.
                 </Text>
                 <Button title="Connect" icon="link" onPress={connect} loading={busy} style={{ marginTop: 8 }} />

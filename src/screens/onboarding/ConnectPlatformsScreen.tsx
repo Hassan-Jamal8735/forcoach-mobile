@@ -75,7 +75,7 @@ export function ConnectPlatformsScreen({ navigation }: Props) {
         />
       </Card>
       <Text style={{ fontSize: 12, color: colors.mutedForeground, lineHeight: 17 }}>
-        FORCOACH only reads your teaching schedule — we never ask for your platform passwords.
+        FORCOACH only reads your teaching schedule. We never ask for your platform passwords.
       </Text>
 
       <ConnectFeedSheet

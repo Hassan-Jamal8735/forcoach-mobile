@@ -91,7 +91,6 @@ export function CalendarScreen({ navigation }: Props) {
     return set;
   }, [events]);
 
-  const hours = dayEvents.reduce((sum, e) => sum + (Date.parse(e.end_time) - Date.parse(e.start_time)) / 3_600_000, 0);
   const studioName = (id: string | null) => studios.find((s) => s.id === id)?.name;
 
   function shiftWeek(delta: number) {
@@ -146,7 +145,7 @@ export function CalendarScreen({ navigation }: Props) {
           {selected.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
         </Text>
         <Text style={styles.summaryMeta}>
-          {dayEvents.length} class{dayEvents.length === 1 ? "" : "es"} · {Number(hours.toFixed(1))}h
+          {dayEvents.length} class{dayEvents.length === 1 ? "" : "es"}
         </Text>
       </View>
 

@@ -7,10 +7,10 @@ import { useOnboarding } from "../../context/OnboardingContext";
 import { updateStudio, type CompensationType } from "../../lib/api/studios";
 import { Avatar, Banner, Button, Card, EmptyState, initials } from "../../components/ui";
 import { colors, studioColor } from "../../theme/colors";
+import { currencySymbol } from "../../lib/currency";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "SetRates">;
 
-const SYMBOLS: Record<string, string> = { EUR: "€", USD: "$", GBP: "£" };
 
 export function SetRatesScreen({ navigation }: Props) {
   const { studios, currency } = useOnboarding();
@@ -22,7 +22,7 @@ export function SetRatesScreen({ navigation }: Props) {
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const symbol = SYMBOLS[currency] ?? "€";
+  const symbol = currencySymbol(currency).trim();
   const editable = studios.filter((s) => s.compensation_type !== "tiered");
 
   async function handleNext() {
@@ -54,7 +54,7 @@ export function SetRatesScreen({ navigation }: Props) {
     >
       {error && <Banner message={error} />}
       {editable.length === 0 ? (
-        <EmptyState icon="cash-outline" title="No studios yet" subtitle="You can set rates any time from Settings → Studios." />
+        <EmptyState icon="cash-outline" title="No studios yet" subtitle="You can set rates any time in Settings, under Studios." />
       ) : (
         editable.map((s) => {
           const type = types[s.id] ?? "per_class";

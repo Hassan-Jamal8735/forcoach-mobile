@@ -10,7 +10,8 @@ import {
   type Plan,
 } from "../../lib/api/billing";
 import { runReturnFlow } from "../../lib/return-flow";
-import { Badge, Banner, Button, Card, Loading, Segmented, StackScreen } from "../../components/ui";
+import { Badge, Banner, Button, Card, Loading, StackScreen } from "../../components/ui";
+import { PriceCard } from "../../components/PriceCard";
 import { colors } from "../../theme/colors";
 
 const STATUS_LABEL: Record<BillingStatus["status"], { label: string; tone: "success" | "accent" | "danger" | "neutral" }> = {
@@ -96,20 +97,12 @@ export function SubscriptionScreen() {
         <>
           <Button title="Manage billing" icon="open-outline" onPress={manageBilling} loading={busy} />
           <Text style={styles.hint}>
-            Update your card, switch plan, download receipts or cancel — opens Stripe securely.
+            Update your card, switch plan, download receipts or cancel. Opens Stripe securely.
           </Text>
         </>
       ) : (
         <>
-          <Segmented
-            options={[
-              { value: "monthly", label: "Monthly · €9" },
-              { value: "yearly", label: "Yearly · €108" },
-            ]}
-            value={plan}
-            onChange={setPlan}
-          />
-          <View style={{ height: 16 }} />
+          <PriceCard plan={plan} onPlanChange={setPlan} />
           <Button title="Start 15-day free trial" onPress={startTrial} loading={busy} />
           <Text style={styles.hint}>You won't be charged until the trial ends. Cancel anytime.</Text>
         </>

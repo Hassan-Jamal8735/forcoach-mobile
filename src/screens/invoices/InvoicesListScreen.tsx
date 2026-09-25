@@ -72,7 +72,7 @@ export function InvoicesListScreen({ navigation }: Props) {
         <EmptyState
           icon="receipt-outline"
           title={filter === "draft" ? "No drafts" : "No invoices yet"}
-          subtitle="Create an invoice for a studio and date range — your classes are pulled in automatically."
+          subtitle="Create an invoice for a studio and date range. Your classes are added automatically."
         />
       ) : (
         visible.map((inv) => (
@@ -91,7 +91,7 @@ export function InvoicesListScreen({ navigation }: Props) {
                 {inv.studio_name}
               </Text>
               <Text style={styles.period}>
-                {shortDate(inv.period_start)} – {shortDate(inv.period_end)}
+                {shortDate(inv.period_start)} to {shortDate(inv.period_end)}
               </Text>
             </View>
             <View style={styles.right}>

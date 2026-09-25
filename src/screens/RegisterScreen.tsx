@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import { Linking, StyleSheet, Text, TouchableOpacity } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AuthStackParamList } from "../navigation/auth-types";
 import { supabase } from "../lib/supabase";
@@ -68,7 +68,7 @@ export function RegisterScreen({ navigation }: Props) {
 
   if (sentTo) {
     return (
-      <AuthLayout title="Check your email" subtitle={`We sent a 6-digit code to ${sentTo}`}>
+      <AuthLayout title="Check your email" subtitle={`We sent a 6-digit code to ${sentTo}.`} onBack={() => setSentTo(null)}>
         {error && <Banner message={error} />}
         {info && <Banner tone="success" message={info} />}
         <Field
@@ -82,7 +82,7 @@ export function RegisterScreen({ navigation }: Props) {
           maxLength={6}
           style={{ fontSize: 22, letterSpacing: 8, textAlign: "center", fontWeight: "700" }}
         />
-        <Button title="Confirm & continue" onPress={verifyCode} loading={submitting} disabled={code.length !== 6} />
+        <Button title="Confirm and continue" variant="dark" trailingIcon="arrow-forward" onPress={verifyCode} loading={submitting} disabled={code.length !== 6} />
         <Text style={styles.hint}>You can also tap the link in the email instead.</Text>
         <Button title="Resend email" variant="ghost" onPress={resend} />
         <Button title="Use a different email" variant="ghost" onPress={() => { setSentTo(null); setCode(""); setError(null); }} />
@@ -91,22 +91,45 @@ export function RegisterScreen({ navigation }: Props) {
   }
 
   return (
-    <AuthLayout title="Create your account" subtitle="Start your 15-day free trial">
+    <AuthLayout
+      title="Create your account"
+      subtitle="Join a community of fitness coaches and simplify your teaching life."
+      onBack={() => navigation.goBack()}
+    >
       {error && <Banner message={error} />}
-      <Field label="Full name" value={fullName} onChangeText={setFullName} autoComplete="name" placeholder="Your name" />
+      <Field icon="person-outline" value={fullName} onChangeText={setFullName} autoComplete="name" placeholder="Full name" />
       <Field
-        label="Email"
+        icon="mail-outline"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
         autoComplete="email"
-        placeholder="you@example.com"
+        placeholder="Email address"
       />
-      <Field label="Password" value={password} onChangeText={setPassword} secure hint="At least 8 characters" autoComplete="new-password" />
-      <Button title="Create account" onPress={handleSubmit} loading={submitting} style={{ marginTop: 8 }} />
+      <Field
+        icon="lock-closed-outline"
+        value={password}
+        onChangeText={setPassword}
+        secure
+        hint="At least 8 characters."
+        autoComplete="new-password"
+        placeholder="Password"
+      />
+      <Button title="Create account" variant="dark" trailingIcon="arrow-forward" onPress={handleSubmit} loading={submitting} style={{ marginTop: 8 }} />
       <Divider />
       <GoogleSignInButton />
+      <Text style={styles.terms}>
+        By creating an account, you agree to our{"\n"}
+        <Text style={styles.termsLink} onPress={() => Linking.openURL("https://forcoach.io/terms")}>
+          Terms of Service
+        </Text>{" "}
+        and{" "}
+        <Text style={styles.termsLink} onPress={() => Linking.openURL("https://forcoach.io/privacy")}>
+          Privacy Policy
+        </Text>
+        .
+      </Text>
       <TouchableOpacity style={styles.footer} onPress={() => navigation.navigate("Login")}>
         <Text style={styles.footerText}>
           Already have an account? <Text style={styles.link}>Log in</Text>
@@ -117,7 +140,9 @@ export function RegisterScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  link: { color: colors.accent, fontWeight: "700", fontSize: 14 },
+  link: { color: colors.foreground, fontWeight: "700", textDecorationLine: "underline" },
+  terms: { fontSize: 13, color: colors.mutedForeground, textAlign: "center", marginTop: 24, lineHeight: 20 },
+  termsLink: { textDecorationLine: "underline", color: colors.mutedForeground },
   footer: { alignItems: "center", marginTop: 28 },
   footerText: { fontSize: 14, color: colors.mutedForeground },
   hint: { fontSize: 13, color: colors.mutedForeground, textAlign: "center", marginTop: 14 },

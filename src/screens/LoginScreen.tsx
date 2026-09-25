@@ -26,23 +26,23 @@ export function LoginScreen({ navigation }: Props) {
   }
 
   return (
-    <AuthLayout title="Welcome back" subtitle="Log in to your FORCOACH account">
+    <AuthLayout title="Welcome back" subtitle="Log in to manage your classes, earnings and invoices.">
       {error && <Banner message={error} />}
       <Field
-        label="Email"
+        icon="mail-outline"
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
         keyboardType="email-address"
         autoComplete="email"
-        placeholder="you@example.com"
+        placeholder="Email address"
       />
-      <Field label="Password" value={password} onChangeText={setPassword} secure autoComplete="password" placeholder="Your password" />
+      <Field icon="lock-closed-outline" value={password} onChangeText={setPassword} secure autoComplete="password" placeholder="Password" />
       <TouchableOpacity style={styles.forgot} onPress={() => navigation.navigate("ForgotPassword")}>
-        <Text style={styles.link}>Forgot password?</Text>
+        <Text style={styles.forgotText}>Forgot password?</Text>
       </TouchableOpacity>
 
-      <Button title="Log in" onPress={handleSubmit} loading={submitting} />
+      <Button title="Log in" variant="dark" trailingIcon="arrow-forward" onPress={handleSubmit} loading={submitting} />
       <Divider />
       <GoogleSignInButton />
 
@@ -56,8 +56,9 @@ export function LoginScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  forgot: { alignSelf: "flex-end", marginBottom: 20, marginTop: -2 },
-  link: { color: colors.accent, fontWeight: "700", fontSize: 14 },
+  forgot: { alignSelf: "flex-end", marginBottom: 22, marginTop: -2 },
+  forgotText: { color: colors.foreground, fontSize: 14, textDecorationLine: "underline" },
+  link: { color: colors.foreground, fontWeight: "700", textDecorationLine: "underline" },
   footer: { alignItems: "center", marginTop: 28 },
   footerText: { fontSize: 14, color: colors.mutedForeground },
 });

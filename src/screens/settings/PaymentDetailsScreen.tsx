@@ -36,7 +36,7 @@ export function PaymentDetailsScreen() {
     <StackScreen footer={<Button title="Save bank details" onPress={handleSave} loading={saving} />}>
       {status && <Banner tone={status.tone} message={status.msg} />}
       <Text style={{ fontSize: 13, color: colors.mutedForeground, marginBottom: 16 }}>
-        Optional — only shown on your invoices if filled in, so studios know where to send payment.
+        Optional. Only shown on your invoices if filled in, so studios know where to send payment.
       </Text>
       <Field label="Account holder name" value={bankAccountName} onChangeText={setBankAccountName} />
       <Field label="Bank name" value={bankName} onChangeText={setBankName} />

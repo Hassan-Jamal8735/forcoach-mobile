@@ -79,7 +79,7 @@ export function CalendarSyncScreen() {
       const result = await runReturnFlow((returnTo) => getGoogleConnectUrl(returnTo));
       if (!result) return;
       if (result.google !== "connected") throw new Error("Google Calendar couldn't be connected. Please try again.");
-      return "Google Calendar connected — now choose which calendar to import.";
+      return "Google Calendar connected. Now choose which calendar to import.";
     });
 
   const disconnectGoogle = () =>
@@ -148,7 +148,7 @@ export function CalendarSyncScreen() {
                 onPress={() =>
                   run("google-sync", async () => {
                     const r = await syncGoogleCalendar();
-                    return `Synced — ${r.created} new, ${r.updated} updated.`;
+                    return `Synced: ${r.created} new, ${r.updated} updated.`;
                   })
                 }
               />
@@ -196,7 +196,7 @@ export function CalendarSyncScreen() {
                         onPress={() =>
                           run(`sync-${f.id}`, async () => {
                             const r = await syncIcsFeed(f.id);
-                            return `${f.name} synced — ${r.created} new, ${r.updated} updated.`;
+                            return `${f.name} synced: ${r.created} new, ${r.updated} updated.`;
                           })
                         }
                       />
@@ -216,7 +216,7 @@ export function CalendarSyncScreen() {
         onClose={() => setConnecting(null)}
         onConnected={(r) => {
           setConnecting(null);
-          setNotice({ tone: "success", msg: `Connected — ${r.created} classes imported.` });
+          setNotice({ tone: "success", msg: `Connected. ${r.created} classes imported.` });
           load();
         }}
       />

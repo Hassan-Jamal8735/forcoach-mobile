@@ -91,7 +91,7 @@ export function StudioFormScreen({ route, navigation }: Props) {
 
       <SectionLabel>Pay</SectionLabel>
       {isTiered ? (
-        <Banner tone="info" message="This studio pays by attendance tiers — edit its tiers on forcoach.io." />
+        <Banner tone="info" message="This studio pays by attendance tiers. You can edit its tiers on forcoach.io." />
       ) : (
         <>
           <Segmented

@@ -1,20 +1,14 @@
 import { useState } from "react";
 import { Alert, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
 import { createCheckoutSession, getBillingStatus, waitForActiveSubscription, type Plan } from "../lib/api/billing";
 import { runReturnFlow } from "../lib/return-flow";
 import { BrandLogo } from "../components/BrandLogo";
-import { Banner, Button, Segmented } from "../components/ui";
+import { Banner, Button } from "../components/ui";
+import { PriceCard } from "../components/PriceCard";
 import { colors } from "../theme/colors";
 
-const FEATURES = [
-  "Your full schedule across every studio",
-  "Automatic earnings tracking",
-  "Invoices in one tap",
-  "Calendar sync with your studio platforms",
-];
 
 /** Shown instead of the app when the coach has no active plan or trial. */
 export function SubscribeScreen({ onAccessGranted }: { onAccessGranted: () => void }) {
@@ -56,33 +50,16 @@ export function SubscribeScreen({ onAccessGranted }: { onAccessGranted: () => vo
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.logo}>
-          <BrandLogo size="sm" tagline={false} />
+          <BrandLogo size="sm" />
         </View>
         <Text style={styles.title}>Start your free trial</Text>
         <Text style={styles.subtitle}>
-          15 days free, then {plan === "monthly" ? "€9 / month" : "€108 / year"}. Cancel anytime — you won't be charged
-          before the trial ends.
+          15 days free, cancel anytime. You won't be charged before the trial ends.
         </Text>
 
         {error && <Banner message={error} />}
 
-        <View style={styles.card}>
-          {FEATURES.map((f) => (
-            <View key={f} style={styles.feature}>
-              <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
-              <Text style={styles.featureText}>{f}</Text>
-            </View>
-          ))}
-        </View>
-
-        <Segmented
-          options={[
-            { value: "monthly", label: "Monthly · €9" },
-            { value: "yearly", label: "Yearly · €108" },
-          ]}
-          value={plan}
-          onChange={setPlan}
-        />
+        <PriceCard plan={plan} onPlanChange={setPlan} />
       </ScrollView>
 
       <View style={styles.footer}>
