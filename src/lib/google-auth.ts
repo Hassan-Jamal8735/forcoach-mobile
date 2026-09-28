@@ -21,15 +21,22 @@ export async function signInWithGoogle(): Promise<{ error: string | null }> {
     return { error: null }; // User cancelled — not an error.
   }
 
-  const { queryParams } = Linking.parse(result.url);
-  const code = queryParams?.code;
-  if (!code || typeof code !== "string") {
-    return { error: "Google sign-in did not return a valid code." };
+  const url = new URL(result.url);
+  const code = url.searchParams.get("code");
+  if (code) {
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+    return { error: exchangeError?.message ?? null };
   }
 
-  const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-  if (exchangeError) {
-    return { error: exchangeError.message };
+  // Fallback for the token-in-fragment style (#access_token=...&refresh_token=...).
+  const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
+  const accessToken = hash.get("access_token");
+  const refreshToken = hash.get("refresh_token");
+  if (accessToken && refreshToken) {
+    const { error: sessionError } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+    return { error: sessionError?.message ?? null };
   }
-  return { error: null };
+
+  const reason = url.searchParams.get("error_description") ?? hash.get("error_description");
+  return { error: reason ?? "Google sign-in didn't complete. Please try again." };
 }
