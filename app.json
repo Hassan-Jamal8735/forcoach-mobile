@@ -9,15 +9,16 @@
     "userInterfaceStyle": "light",
     "backgroundColor": "#f7f6f4",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "io.forcoach.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#1c1c1c",
+        "backgroundColor": "#f7f6f4",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -47,7 +48,8 @@
       ],
       "expo-web-browser",
       "expo-sharing",
-      "expo-font"
+      "expo-font",
+      "expo-apple-authentication"
     ]
   }
 }

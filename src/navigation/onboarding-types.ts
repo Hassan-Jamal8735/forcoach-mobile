@@ -4,6 +4,5 @@ export type OnboardingStackParamList = {
   ConnectPlatforms: undefined;
   SetRates: undefined;
   ChooseCurrency: undefined;
-  ChoosePlan: undefined;
   Done: undefined;
 };

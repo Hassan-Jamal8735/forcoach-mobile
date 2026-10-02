@@ -1,7 +1,7 @@
 import { Image } from "react-native";
 
 const WIDTHS = { sm: 150, md: 180, lg: 210 };
-const ASPECT = 412 / 900;
+const ASPECT = 487 / 1065;
 
 /** The original FORCOACH logo (FC mark + wordmark in the brand font). */
 export function BrandLogo({ size = "md" }: { size?: keyof typeof WIDTHS }) {

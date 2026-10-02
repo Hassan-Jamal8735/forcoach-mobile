@@ -1,70 +1,58 @@
 import { useState } from "react";
-import { Alert, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Linking, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
-import { createCheckoutSession, getBillingStatus, waitForActiveSubscription, type Plan } from "../lib/api/billing";
-import { runReturnFlow } from "../lib/return-flow";
+import { getBillingStatus } from "../lib/api/billing";
 import { BrandLogo } from "../components/BrandLogo";
 import { Banner, Button } from "../components/ui";
-import { PriceCard } from "../components/PriceCard";
 import { colors } from "../theme/colors";
 
-
-/** Shown instead of the app when the coach has no active plan or trial. */
+/**
+ * Shown instead of the app when the account has no active plan. Plans are
+ * bought outside the app, so this screen deliberately has no prices, purchase
+ * buttons or links to a payment page (App Store / Play Store rules).
+ */
 export function SubscribeScreen({ onAccessGranted }: { onAccessGranted: () => void }) {
   const { session, signOut } = useAuth();
-  const [plan, setPlan] = useState<Plan>("monthly");
-  const [busy, setBusy] = useState<"checkout" | "refresh" | null>(null);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function startTrial() {
-    setBusy("checkout");
-    setError(null);
-    try {
-      const result = await runReturnFlow((returnTo) => createCheckoutSession(plan, returnTo));
-      const started = await waitForActiveSubscription(result?.billing === "success" ? 10000 : 1500);
-      if (started) onAccessGranted();
-      else setError("Checkout wasn't completed, so your trial hasn't started yet.");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't open checkout. Please try again.");
-    } finally {
-      setBusy(null);
-    }
-  }
-
   async function refresh() {
-    setBusy("refresh");
+    setBusy(true);
     setError(null);
     try {
       const status = await getBillingStatus();
       if (status.hasAccess) onAccessGranted();
-      else setError("We couldn't find an active plan or trial on this account yet.");
+      else setError("There's no active plan on this account yet.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't check your plan.");
+      setError(e instanceof Error ? e.message : "Couldn't check your plan. Please try again.");
     } finally {
-      setBusy(null);
+      setBusy(false);
     }
   }
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.logo}>
-          <BrandLogo size="sm" />
+      <View style={styles.center}>
+        <BrandLogo size="sm" />
+        <View style={styles.icon}>
+          <Ionicons name="lock-closed-outline" size={30} color={colors.accent} />
         </View>
-        <Text style={styles.title}>Start your free trial</Text>
+        <Text style={styles.title}>No active plan</Text>
         <Text style={styles.subtitle}>
-          15 days free, cancel anytime. You won't be charged before the trial ends.
+          {session?.user.email} doesn't have an active FORCOACH plan. Plans can't be purchased in the app. Once your
+          plan is active, tap Refresh.
         </Text>
-
-        {error && <Banner message={error} />}
-
-        <PriceCard plan={plan} onPlanChange={setPlan} />
-      </ScrollView>
+        {error && (
+          <View style={{ alignSelf: "stretch" }}>
+            <Banner message={error} />
+          </View>
+        )}
+      </View>
 
       <View style={styles.footer}>
-        <Button title="Start 15-day free trial" icon="arrow-forward" onPress={startTrial} loading={busy === "checkout"} />
-        <Button title="I've already subscribed" variant="ghost" onPress={refresh} loading={busy === "refresh"} />
+        <Button title="Refresh" icon="refresh" variant="dark" onPress={refresh} loading={busy} />
         <View style={styles.links}>
           <Text style={styles.link} onPress={() => Linking.openURL("mailto:contact@forcoach.io")}>
             Contact support
@@ -89,23 +77,21 @@ export function SubscribeScreen({ onAccessGranted }: { onAccessGranted: () => vo
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16 },
-  logo: { alignItems: "center", marginBottom: 28 },
-  title: { fontSize: 28, fontWeight: "800", color: colors.foreground, letterSpacing: -0.5, textAlign: "center" },
-  subtitle: { fontSize: 15, color: colors.mutedForeground, textAlign: "center", marginTop: 8, marginBottom: 24, lineHeight: 21 },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: colors.accent,
-    padding: 20,
-    gap: 14,
+  center: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 28 },
+  icon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: colors.accentLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 36,
     marginBottom: 20,
   },
-  feature: { flexDirection: "row", alignItems: "center", gap: 12 },
-  featureText: { flex: 1, fontSize: 15, color: colors.foreground },
+  title: { fontSize: 26, fontWeight: "800", color: colors.foreground, letterSpacing: -0.5 },
+  subtitle: { fontSize: 15, color: colors.mutedForeground, textAlign: "center", marginTop: 10, marginBottom: 20, lineHeight: 22 },
   footer: { paddingHorizontal: 20, paddingBottom: 8, gap: 4 },
-  links: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 8 },
+  links: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 12 },
   link: { fontSize: 14, fontWeight: "600", color: colors.mutedForeground },
   dot: { color: colors.mutedForeground },
 });

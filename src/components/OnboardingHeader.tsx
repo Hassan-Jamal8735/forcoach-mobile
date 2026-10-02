@@ -2,7 +2,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../theme/colors";
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 4;
 
 export function OnboardingHeader({
   step,

@@ -56,7 +56,8 @@ export function getInvoice(id: string) {
 }
 
 export function createInvoice(input: CreateInvoiceInput) {
-  return apiFetch<Invoice>("/invoices", {
+  // The API answers with the invoice and its line items together.
+  return apiFetch<InvoiceDetail>("/invoices", {
     method: "POST",
     body: JSON.stringify(input),
   });

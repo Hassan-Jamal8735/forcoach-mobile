@@ -6,7 +6,6 @@ import { AddStudiosScreen } from "../screens/onboarding/AddStudiosScreen";
 import { ConnectPlatformsScreen } from "../screens/onboarding/ConnectPlatformsScreen";
 import { SetRatesScreen } from "../screens/onboarding/SetRatesScreen";
 import { ChooseCurrencyScreen } from "../screens/onboarding/ChooseCurrencyScreen";
-import { ChoosePlanScreen } from "../screens/onboarding/ChoosePlanScreen";
 import { DoneScreen } from "../screens/onboarding/DoneScreen";
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();
@@ -20,7 +19,6 @@ export function OnboardingNavigator() {
         <Stack.Screen name="ConnectPlatforms" component={ConnectPlatformsScreen} />
         <Stack.Screen name="SetRates" component={SetRatesScreen} />
         <Stack.Screen name="ChooseCurrency" component={ChooseCurrencyScreen} />
-        <Stack.Screen name="ChoosePlan" component={ChoosePlanScreen} />
         <Stack.Screen name="Done" component={DoneScreen} />
       </Stack.Navigator>
     </OnboardingProvider>

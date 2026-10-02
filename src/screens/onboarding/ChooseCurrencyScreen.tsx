@@ -20,7 +20,7 @@ export function ChooseCurrencyScreen({ navigation }: Props) {
       onBack={() => navigation.goBack()}
       title="Choose your currency"
       subtitle="Used for your earnings and invoices."
-      footer={<Button title="Next" icon="arrow-forward" variant="dark" onPress={() => navigation.navigate("ChoosePlan")} />}
+      footer={<Button title="Next" icon="arrow-forward" variant="dark" onPress={() => navigation.navigate("Done")} />}
     >
       <Card padded={false}>
         {CURRENCIES.map((c, i) => (

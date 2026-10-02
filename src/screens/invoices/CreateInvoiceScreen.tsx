@@ -67,7 +67,7 @@ export function CreateInvoiceScreen({ navigation }: Props) {
     setError(null);
     setCreating(true);
     try {
-      const invoice = await createInvoice({
+      const { invoice } = await createInvoice({
         studioId,
         periodStart: periodStart.toISOString(),
         periodEnd: periodEnd.toISOString(),

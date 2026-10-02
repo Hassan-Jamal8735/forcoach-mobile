@@ -5,6 +5,7 @@ import type { AuthStackParamList } from "../navigation/auth-types";
 import { supabase } from "../lib/supabase";
 import { AuthLayout, Divider } from "../components/AuthLayout";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
+import { AppleSignInButton } from "../components/AppleSignInButton";
 import { Banner, Button, Field } from "../components/ui";
 import { colors } from "../theme/colors";
 
@@ -119,6 +120,7 @@ export function RegisterScreen({ navigation }: Props) {
       <Button title="Create account" variant="dark" trailingIcon="arrow-forward" onPress={handleSubmit} loading={submitting} style={{ marginTop: 8 }} />
       <Divider />
       <GoogleSignInButton />
+      <AppleSignInButton />
       <Text style={styles.terms}>
         By creating an account, you agree to our{"\n"}
         <Text style={styles.termsLink} onPress={() => Linking.openURL("https://forcoach.io/terms")}>

@@ -5,6 +5,7 @@ import type { AuthStackParamList } from "../navigation/auth-types";
 import { useAuth } from "../context/AuthContext";
 import { AuthLayout, Divider } from "../components/AuthLayout";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
+import { AppleSignInButton } from "../components/AppleSignInButton";
 import { Banner, Button, Field } from "../components/ui";
 import { colors } from "../theme/colors";
 
@@ -45,6 +46,7 @@ export function LoginScreen({ navigation }: Props) {
       <Button title="Log in" variant="dark" trailingIcon="arrow-forward" onPress={handleSubmit} loading={submitting} />
       <Divider />
       <GoogleSignInButton />
+      <AppleSignInButton />
 
       <TouchableOpacity style={styles.footer} onPress={() => navigation.navigate("Register")}>
         <Text style={styles.footerText}>

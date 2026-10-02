@@ -1,17 +1,8 @@
 import { useCallback, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import {
-  createCheckoutSession,
-  createPortalSession,
-  getBillingStatus,
-  type BillingStatus,
-  waitForActiveSubscription,
-  type Plan,
-} from "../../lib/api/billing";
-import { runReturnFlow } from "../../lib/return-flow";
-import { Badge, Banner, Button, Card, Loading, StackScreen } from "../../components/ui";
-import { PriceCard } from "../../components/PriceCard";
+import { getBillingStatus, type BillingStatus } from "../../lib/api/billing";
+import { Badge, Banner, Card, Loading, StackScreen } from "../../components/ui";
 import { colors } from "../../theme/colors";
 
 const STATUS_LABEL: Record<BillingStatus["status"], { label: string; tone: "success" | "accent" | "danger" | "neutral" }> = {
@@ -24,61 +15,26 @@ const STATUS_LABEL: Record<BillingStatus["status"], { label: string; tone: "succ
   none: { label: "No plan", tone: "neutral" },
 };
 
+/** Read-only: plans are bought and managed outside the app (store rules). */
 export function SubscriptionScreen() {
   const [status, setStatus] = useState<BillingStatus | null>(null);
-  const [plan, setPlan] = useState<Plan>("monthly");
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       getBillingStatus()
         .then(setStatus)
-        .catch((e) => setError(e instanceof Error ? e.message : "Could not load your subscription"));
+        .catch((e) => setError(e instanceof Error ? e.message : "Could not load your plan"));
     }, []),
   );
 
-  async function startTrial() {
-    setBusy(true);
-    setError(null);
-    setInfo(null);
-    try {
-      const result = await runReturnFlow((returnTo) => createCheckoutSession(plan, returnTo));
-      const started = await waitForActiveSubscription(result?.billing === "success" ? 10000 : 1500);
-      setStatus(await getBillingStatus());
-      if (started) setInfo("Your free trial has started.");
-      else setError("Checkout wasn't completed, so no trial was started.");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function manageBilling() {
-    setBusy(true);
-    setError(null);
-    setInfo(null);
-    try {
-      await runReturnFlow((returnTo) => createPortalSession(returnTo));
-      setStatus(await getBillingStatus());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   if (!status && !error) return <Loading />;
 
-  const hasPlan = !!status && ["active", "trialing", "past_due", "unpaid"].includes(status.status);
   const s = STATUS_LABEL[status?.status ?? "none"];
 
   return (
     <StackScreen>
       {error && <Banner message={error} />}
-      {info && <Banner tone="success" message={info} />}
       <Card>
         <View style={styles.row}>
           <Text style={styles.plan}>Coach Plan</Text>
@@ -92,21 +48,7 @@ export function SubscriptionScreen() {
           </Text>
         )}
       </Card>
-
-      {hasPlan ? (
-        <>
-          <Button title="Manage billing" icon="open-outline" onPress={manageBilling} loading={busy} />
-          <Text style={styles.hint}>
-            Update your card, switch plan, download receipts or cancel. Opens Stripe securely.
-          </Text>
-        </>
-      ) : (
-        <>
-          <PriceCard plan={plan} onPlanChange={setPlan} />
-          <Button title="Start 15-day free trial" onPress={startTrial} loading={busy} />
-          <Text style={styles.hint}>You won't be charged until the trial ends. Cancel anytime.</Text>
-        </>
-      )}
+      <Text style={styles.hint}>Your plan can't be changed in the app.</Text>
     </StackScreen>
   );
 }
@@ -115,5 +57,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   plan: { fontSize: 18, fontWeight: "700", color: colors.foreground },
   meta: { fontSize: 14, color: colors.mutedForeground, marginTop: 6 },
-  hint: { fontSize: 12, color: colors.mutedForeground, textAlign: "center", marginTop: 10 },
+  hint: { fontSize: 13, color: colors.mutedForeground, marginLeft: 4 },
 });
