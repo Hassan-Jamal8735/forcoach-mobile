@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { AuthStackParamList } from "../navigation/auth-types";
 import { supabase } from "../lib/supabase";
 import { AuthLayout } from "../components/AuthLayout";
+import { Captcha } from "../components/Captcha";
 import { Banner, Button, EmptyState, Field } from "../components/ui";
 import { colors } from "../theme/colors";
 
@@ -14,14 +15,18 @@ export function ForgotPasswordScreen({ navigation }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   async function handleSubmit() {
     setError(null);
     setSubmitting(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: "https://forcoach.io/auth/callback?redirectTo=%2Freset-password",
+      captchaToken: captcha ?? undefined,
     });
     setSubmitting(false);
+    setCaptchaReset((n) => n + 1);
     if (error) return setError(error.message);
     setSent(true);
   }
@@ -46,7 +51,8 @@ export function ForgotPasswordScreen({ navigation }: Props) {
             autoComplete="email"
             placeholder="Email address"
           />
-          <Button title="Send reset link" variant="dark" trailingIcon="arrow-forward" onPress={handleSubmit} loading={submitting} style={{ marginTop: 8 }} />
+          <Captcha onToken={setCaptcha} resetKey={captchaReset} />
+          <Button disabled={!captcha} title="Send reset link" variant="dark" trailingIcon="arrow-forward" onPress={handleSubmit} loading={submitting} style={{ marginTop: 8 }} />
         </>
       )}
       <TouchableOpacity style={styles.footer} onPress={() => navigation.navigate("Login")}>

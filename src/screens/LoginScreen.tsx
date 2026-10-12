@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { AuthLayout, Divider } from "../components/AuthLayout";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { AppleSignInButton } from "../components/AppleSignInButton";
+import { Captcha } from "../components/Captcha";
 import { Banner, Button, Field } from "../components/ui";
 import { colors } from "../theme/colors";
 
@@ -17,12 +18,15 @@ export function LoginScreen({ navigation }: Props) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   async function handleSubmit() {
     setError(null);
     setSubmitting(true);
-    const { error } = await signIn(email.trim(), password);
+    const { error } = await signIn(email.trim(), password, captcha ?? undefined);
     setSubmitting(false);
+    setCaptchaReset((n) => n + 1);
     if (error) setError(error);
   }
 
@@ -43,7 +47,8 @@ export function LoginScreen({ navigation }: Props) {
         <Text style={styles.forgotText}>Forgot password?</Text>
       </TouchableOpacity>
 
-      <Button title="Log in" variant="dark" trailingIcon="arrow-forward" onPress={handleSubmit} loading={submitting} />
+      <Captcha onToken={setCaptcha} resetKey={captchaReset} />
+      <Button title="Log in" variant="dark" trailingIcon="arrow-forward" onPress={handleSubmit} loading={submitting} disabled={!captcha} />
       <Divider />
       <GoogleSignInButton />
       <AppleSignInButton />
