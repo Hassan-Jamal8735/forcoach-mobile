@@ -22,6 +22,18 @@ function startOfWeek(date: Date) {
   return d;
 }
 
+function monthGrid(date: Date) {
+  const first = new Date(date.getFullYear(), date.getMonth(), 1);
+  const start = startOfWeek(first);
+  const last = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  const weeks = Math.ceil(((first.getDay() + 6) % 7 + last.getDate()) / 7);
+  return Array.from({ length: weeks * 7 }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    return d;
+  });
+}
+
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
@@ -44,6 +56,7 @@ export function CalendarScreen({ navigation }: Props) {
   const [events, setEvents] = useState<Event[] | null>(null);
   const [studios, setStudios] = useState<Studio[]>([]);
   const [selected, setSelected] = useState(new Date());
+  const [view, setView] = useState<"week" | "month">("week");
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,6 +90,8 @@ export function CalendarScreen({ navigation }: Props) {
     });
   }, [selected]);
 
+  const month = useMemo(() => monthGrid(selected), [selected]);
+
   const dayEvents = useMemo(
     () =>
       (events ?? [])
@@ -100,6 +115,14 @@ export function CalendarScreen({ navigation }: Props) {
     setSelected(d);
   }
 
+  function shiftMonth(delta: number) {
+    // Clamp to the last day so Jan 31 + 1 month lands on Feb 28, not Mar 3.
+    const target = new Date(selected.getFullYear(), selected.getMonth() + delta, 1);
+    const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+    target.setDate(Math.min(selected.getDate(), lastDay));
+    setSelected(target);
+  }
+
   if (!events) return <Loading />;
 
   const isToday = sameDay(selected, new Date());
@@ -114,6 +137,61 @@ export function CalendarScreen({ navigation }: Props) {
         />
       </View>
 
+      <View style={styles.toggle}>
+        {(["week", "month"] as const).map((v) => (
+          <TouchableOpacity key={v} style={[styles.toggleItem, view === v && styles.toggleItemActive]} onPress={() => setView(v)}>
+            <Text style={[styles.toggleText, view === v && styles.toggleTextActive]}>{v === "week" ? "Week" : "Month"}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {view === "month" ? (
+        <View style={styles.monthWrap}>
+          <View style={styles.monthNav}>
+            <TouchableOpacity onPress={() => shiftMonth(-1)} hitSlop={10}>
+              <Ionicons name="chevron-back" size={20} color={colors.mutedForeground} />
+            </TouchableOpacity>
+            <Text style={styles.monthTitle}>{selected.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</Text>
+            <TouchableOpacity onPress={() => shiftMonth(1)} hitSlop={10}>
+              <Ionicons name="chevron-forward" size={20} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.monthGrid}>
+            {DAY_LETTERS.map((l) => (
+              <Text key={l} style={[styles.dayLetter, styles.monthLetter]}>
+                {l}
+              </Text>
+            ))}
+            {month.map((d) => {
+              const active = sameDay(d, selected);
+              const today = sameDay(d, new Date());
+              const inMonth = d.getMonth() === selected.getMonth();
+              return (
+                <TouchableOpacity key={d.toISOString()} style={styles.monthCell} onPress={() => setSelected(d)}>
+                  <View style={[styles.monthDay, active && styles.dayActive]}>
+                    <Text
+                      style={[
+                        styles.monthNum,
+                        !inMonth && { color: colors.mutedForeground, opacity: 0.5 },
+                        today && !active && { color: colors.accent },
+                        active && styles.dayTextActive,
+                      ]}
+                    >
+                      {d.getDate()}
+                    </Text>
+                    <View
+                      style={[
+                        styles.dot,
+                        { backgroundColor: daysWithClasses.has(d.toDateString()) ? (active ? colors.accentForeground : colors.accent) : "transparent" },
+                      ]}
+                    />
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      ) : (
       <View style={styles.weekRow}>
         <TouchableOpacity onPress={() => shiftWeek(-1)} hitSlop={10} style={styles.arrow}>
           <Ionicons name="chevron-back" size={20} color={colors.mutedForeground} />
@@ -140,6 +218,7 @@ export function CalendarScreen({ navigation }: Props) {
           <Ionicons name="chevron-forward" size={20} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>
+      )}
 
       <View style={[styles.pad, styles.summary]}>
         <Text style={styles.summaryTitle}>
@@ -245,6 +324,19 @@ const styles = StyleSheet.create({
   dayLetter: { fontSize: 11, fontWeight: "600", color: colors.mutedForeground },
   dayNum: { fontSize: 17, fontWeight: "700", color: colors.foreground },
   dayTextActive: { color: colors.accentForeground },
+  toggle: { flexDirection: "row", marginHorizontal: 20, marginBottom: 10, backgroundColor: colors.card, borderRadius: 12, padding: 3 },
+  toggleItem: { flex: 1, alignItems: "center", paddingVertical: 7, borderRadius: 10 },
+  toggleItemActive: { backgroundColor: colors.foreground },
+  toggleText: { fontSize: 13, fontWeight: "700", color: colors.mutedForeground },
+  toggleTextActive: { color: colors.background },
+  monthWrap: { paddingHorizontal: 12, marginBottom: 4 },
+  monthNav: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 8, marginBottom: 6 },
+  monthTitle: { fontSize: 15, fontWeight: "700", color: colors.foreground },
+  monthGrid: { flexDirection: "row", flexWrap: "wrap" },
+  monthCell: { width: "14.2857%", alignItems: "center", paddingVertical: 2 },
+  monthLetter: { width: "14.2857%", textAlign: "center", paddingBottom: 4 },
+  monthDay: { width: 38, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", gap: 2 },
+  monthNum: { fontSize: 15, fontWeight: "700", color: colors.foreground },
   dot: { width: 5, height: 5, borderRadius: 3 },
   summary: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", paddingVertical: 10 },
   summaryTitle: { fontSize: 17, fontWeight: "700", color: colors.foreground },
