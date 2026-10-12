@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Linking, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
-import { getBillingStatus } from "../lib/api/billing";
+import { getBillingStatus, sendPlanInfoEmail } from "../lib/api/billing";
 import { BrandLogo } from "../components/BrandLogo";
 import { Banner, Button } from "../components/ui";
 import { colors } from "../theme/colors";
@@ -11,12 +11,17 @@ import { colors } from "../theme/colors";
 /**
  * Shown instead of the app when the account has no active plan. Plans are
  * bought outside the app, so this screen deliberately has no prices, purchase
- * buttons or links to a payment page (App Store / Play Store rules).
+ * buttons or links to a payment page (App Store / Play Store rules). The
+ * server emails the coach how to choose a plan instead.
  */
 export function SubscribeScreen({ onAccessGranted }: { onAccessGranted: () => void }) {
   const { session, signOut } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    sendPlanInfoEmail().catch(() => {});
+  }, []);
 
   async function refresh() {
     setBusy(true);
@@ -41,8 +46,8 @@ export function SubscribeScreen({ onAccessGranted }: { onAccessGranted: () => vo
         </View>
         <Text style={styles.title}>No active plan</Text>
         <Text style={styles.subtitle}>
-          {session?.user.email} doesn't have an active FORCOACH plan. Plans can't be purchased in the app. Once your
-          plan is active, tap Refresh.
+          {session?.user.email} doesn't have an active FORCOACH plan yet. We've sent the details to this email
+          address. Once your plan is active, tap Refresh.
         </Text>
         {error && (
           <View style={{ alignSelf: "stretch" }}>

@@ -21,3 +21,8 @@ export type BillingStatus = {
 export function getBillingStatus() {
   return apiFetch<BillingStatus>("/billing/status");
 }
+
+// Emails the coach how to choose a plan on the website (throttled server-side).
+export function sendPlanInfoEmail() {
+  return apiFetch<{ sent: boolean }>("/billing/plan-info-email", { method: "POST" });
+}
