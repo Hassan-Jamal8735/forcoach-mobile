@@ -6,7 +6,6 @@ import { supabase } from "../lib/supabase";
 import { AuthLayout, Divider } from "../components/AuthLayout";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { AppleSignInButton } from "../components/AppleSignInButton";
-import { Captcha } from "../components/Captcha";
 import { Banner, Button, Field } from "../components/ui";
 import { colors } from "../theme/colors";
 
@@ -21,8 +20,6 @@ export function RegisterScreen({ navigation }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [code, setCode] = useState("");
   const [info, setInfo] = useState<string | null>(null);
-  const [captcha, setCaptcha] = useState<string | null>(null);
-  const [captchaReset, setCaptchaReset] = useState(0);
 
   async function handleSubmit() {
     setError(null);
@@ -39,11 +36,9 @@ export function RegisterScreen({ navigation }: Props) {
           currency: "EUR",
         },
         emailRedirectTo: "https://forcoach.io/auth/callback?redirectTo=%2Fdashboard",
-        captchaToken: captcha ?? undefined,
       },
     });
     setSubmitting(false);
-    setCaptchaReset((n) => n + 1);
     if (error) return setError(error.message);
     setSentTo(email.trim());
   }
@@ -66,9 +61,8 @@ export function RegisterScreen({ navigation }: Props) {
     const { error } = await supabase.auth.resend({
       type: "signup",
       email: sentTo ?? "",
-      options: { emailRedirectTo: "https://forcoach.io/auth/callback?redirectTo=%2Fdashboard", captchaToken: captcha ?? undefined },
+      options: { emailRedirectTo: "https://forcoach.io/auth/callback?redirectTo=%2Fdashboard" },
     });
-    setCaptchaReset((n) => n + 1);
     if (error) setError(error.message);
     else setInfo("Confirmation email sent again.");
   }
@@ -91,8 +85,7 @@ export function RegisterScreen({ navigation }: Props) {
         />
         <Button title="Confirm and continue" variant="dark" trailingIcon="arrow-forward" onPress={verifyCode} loading={submitting} disabled={code.length !== 6} />
         <Text style={styles.hint}>You can also tap the link in the email instead.</Text>
-        <Captcha onToken={setCaptcha} resetKey={captchaReset} />
-        <Button title="Resend email" variant="ghost" onPress={resend} disabled={!captcha} />
+        <Button title="Resend email" variant="ghost" onPress={resend} />
         <Button title="Use a different email" variant="ghost" onPress={() => { setSentTo(null); setCode(""); setError(null); }} />
       </AuthLayout>
     );
@@ -124,8 +117,7 @@ export function RegisterScreen({ navigation }: Props) {
         autoComplete="new-password"
         placeholder="Password"
       />
-      <Captcha onToken={setCaptcha} resetKey={captchaReset} />
-      <Button title="Create account" variant="dark" trailingIcon="arrow-forward" onPress={handleSubmit} loading={submitting} disabled={!captcha} style={{ marginTop: 8 }} />
+      <Button title="Create account" variant="dark" trailingIcon="arrow-forward" onPress={handleSubmit} loading={submitting} style={{ marginTop: 8 }} />
       <Divider />
       <GoogleSignInButton />
       <AppleSignInButton />
