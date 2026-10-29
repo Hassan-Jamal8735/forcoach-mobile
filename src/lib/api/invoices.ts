@@ -87,7 +87,9 @@ export async function downloadInvoicePdf(invoice: Invoice): Promise<string> {
   const token = await getValidAccessToken();
   if (!token) throw new ApiError(401, "Not authenticated");
   const filename = `${invoice.invoice_number ?? `draft-${invoice.id.slice(0, 8)}`}.pdf`;
-  const result = await downloadAsync(`${API_URL}/invoices/${invoice.id}/pdf`, `${cacheDirectory}${filename}`, {
+  // The server renders in UTC; send the device zone so class times match the calendar.
+  const tz = encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const result = await downloadAsync(`${API_URL}/invoices/${invoice.id}/pdf?tz=${tz}`, `${cacheDirectory}${filename}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (result.status !== 200) throw new ApiError(result.status, "Could not download the PDF");

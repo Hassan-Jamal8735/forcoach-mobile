@@ -25,6 +25,14 @@ function longDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+/** "14:00–15:00": start plus the line item's snapshotted duration. */
+function timeRange(iso: string, hours: number) {
+  const start = new Date(iso);
+  const end = new Date(start.getTime() + Math.round(hours * 60) * 60_000);
+  const t = (d: Date) => d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return `${t(start)}–${t(end)}`;
+}
+
 export function InvoiceDetailScreen({ route, navigation }: Props) {
   const { invoiceId } = route.params;
   const { format, symbol } = useCurrency();
@@ -164,7 +172,7 @@ export function InvoiceDetailScreen({ route, navigation }: Props) {
                 {item.title}
               </Text>
               <Text style={styles.lineMeta}>
-                {longDate(item.event_date)} ·{" "}
+                {longDate(item.event_date)} · {timeRange(item.event_date, item.hours)} ·{" "}
                 {item.compensation_type === "hourly" ? `${Number(item.hours.toFixed(2))}h × ${symbol}${item.rate}` : `${symbol}${item.rate} / class`}
               </Text>
             </View>

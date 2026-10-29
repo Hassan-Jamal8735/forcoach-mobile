@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 import {
   getEarningsSummary,
   getEarningsTimeseries,
@@ -13,14 +14,34 @@ import { colors, studioColor } from "../theme/colors";
 
 type Period = "week" | "month" | "year";
 
-function range(period: Period) {
+/** The period `offset` steps back from the current one (0 = this week/month/year). */
+function range(period: Period, offset: number) {
   const now = new Date();
-  const start = new Date(now);
-  if (period === "week") start.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-  if (period === "month") start.setDate(1);
-  if (period === "year") start.setMonth(0, 1);
-  start.setHours(0, 0, 0, 0);
-  return { from: start.toISOString(), to: now.toISOString() };
+  let start: Date;
+  let end: Date;
+  if (period === "week") {
+    start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7) - offset * 7);
+    end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7);
+  } else if (period === "month") {
+    start = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+    end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+  } else {
+    start = new Date(now.getFullYear() - offset, 0, 1);
+    end = new Date(start.getFullYear() + 1, 0, 1);
+  }
+  // The current period stops at "now" so upcoming classes aren't counted as earned yet.
+  const to = offset === 0 ? now : new Date(end.getTime() - 1);
+  return { start, from: start.toISOString(), to: to.toISOString() };
+}
+
+function rangeLabel(period: Period, offset: number) {
+  if (offset === 0) return { week: "this week", month: "this month", year: "this year" }[period];
+  const { start } = range(period, offset);
+  if (period === "year") return `in ${start.getFullYear()}`;
+  if (period === "month") return `in ${start.toLocaleDateString(undefined, { month: "long", year: "numeric" })}`;
+  const last = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+  const day = (d: Date) => d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  return `${day(start)} – ${day(last)}`;
 }
 
 const GRANULARITY: Record<Period, "day" | "week" | "month"> = { week: "day", month: "week", year: "month" };
@@ -34,15 +55,16 @@ function bucketLabel(bucket: string, period: Period) {
 export function EarningsScreen() {
   const { format } = useCurrency();
   const [period, setPeriod] = useState<Period>("month");
+  const [offset, setOffset] = useState(0);
   const [summary, setSummary] = useState<EarningsSummary | null>(null);
   const [points, setPoints] = useState<TimeseriesPoint[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (p: Period) => {
+  const load = useCallback(async (p: Period, o: number) => {
     try {
       setError(null);
-      const { from, to } = range(p);
+      const { from, to } = range(p, o);
       const [s, t] = await Promise.all([getEarningsSummary(from, to), getEarningsTimeseries(from, to, GRANULARITY[p])]);
       setSummary(s);
       setPoints(t.points);
@@ -55,22 +77,23 @@ export function EarningsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      load(period);
-    }, [load, period]),
+      load(period, offset);
+    }, [load, period, offset]),
   );
 
   if (!summary && !error) return <Loading />;
 
   const max = Math.max(1, ...points.map((p) => p.earnings));
   const top = Math.max(1, ...(summary?.studioBreakdown ?? []).map((s) => s.earnings));
-  const periodLabel = { week: "this week", month: "this month", year: "this year" }[period];
+  const periodLabel = rangeLabel(period, offset);
+  const navLabel = periodLabel.replace(/^in /, "");
 
   return (
     <Screen
       refreshing={refreshing}
       onRefresh={() => {
         setRefreshing(true);
-        load(period);
+        load(period, offset);
       }}
     >
       <ScreenHeader title="Earnings" />
@@ -81,8 +104,26 @@ export function EarningsScreen() {
           { value: "year", label: "Year" },
         ]}
         value={period}
-        onChange={setPeriod}
+        onChange={(p) => {
+          setPeriod(p);
+          setOffset(0);
+        }}
       />
+
+      <View style={styles.nav}>
+        <TouchableOpacity onPress={() => setOffset((o) => o + 1)} hitSlop={10} style={styles.navButton}>
+          <Ionicons name="chevron-back" size={20} color={colors.foreground} />
+        </TouchableOpacity>
+        <Text style={styles.navLabel}>{navLabel.charAt(0).toUpperCase() + navLabel.slice(1)}</Text>
+        <TouchableOpacity
+          onPress={() => setOffset((o) => Math.max(0, o - 1))}
+          disabled={offset === 0}
+          hitSlop={10}
+          style={[styles.navButton, offset === 0 && { opacity: 0.3 }]}
+        >
+          <Ionicons name="chevron-forward" size={20} color={colors.foreground} />
+        </TouchableOpacity>
+      </View>
 
       {error && <View style={{ marginTop: 12 }}><Banner message={error} /></View>}
 
@@ -107,7 +148,7 @@ export function EarningsScreen() {
             })}
           </View>
         ) : (
-          <Text style={styles.noData}>No paid classes yet {periodLabel}.</Text>
+          <Text style={styles.noData}>{offset === 0 ? `No paid classes yet ${periodLabel}.` : `No paid classes ${periodLabel}.`}</Text>
         )}
       </Card>
 
@@ -170,7 +211,10 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  hero: { marginTop: 16, paddingBottom: 12 },
+  nav: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 14 },
+  navButton: { padding: 6 },
+  navLabel: { fontSize: 15, fontWeight: "700", color: colors.foreground },
+  hero: { marginTop: 10, paddingBottom: 12 },
   heroLabel: { fontSize: 13, fontWeight: "600", color: colors.mutedForeground },
   heroAmount: { fontSize: 40, fontWeight: "800", color: colors.foreground, letterSpacing: -1, marginTop: 2 },
   chart: { flexDirection: "row", alignItems: "flex-end", height: 140, gap: 6, marginTop: 16 },

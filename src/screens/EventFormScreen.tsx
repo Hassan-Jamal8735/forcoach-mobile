@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import { Alert, Switch, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { CalendarStackParamList } from "../navigation/types";
-import { createEvent, deleteEvent, updateEvent } from "../lib/api/events";
+import { createEvent, deleteEvent, listEvents, updateEvent, type Event } from "../lib/api/events";
 import { listStudios, type Studio } from "../lib/api/studios";
 import { useCurrency } from "../lib/currency";
 import { Banner, Button, Card, Field, ListRow, SectionLabel, StackScreen } from "../components/ui";
@@ -29,6 +29,26 @@ function sameDate(a: Date, b: Date) {
   return a.toDateString() === b.toDateString();
 }
 
+function minutesOfDay(d: Date) {
+  return d.getHours() * 60 + d.getMinutes();
+}
+
+/** Class names the coach has used before, most used first. */
+function pastClassNames(events: Event[]) {
+  const counts = new Map<string, { name: string; count: number }>();
+  for (const e of events) {
+    // Skip un-assigned calendar imports: those are often personal events, not classes.
+    if (e.source !== "manual" && !e.studio_id) continue;
+    const name = e.title.trim();
+    if (!name) continue;
+    const key = name.toLowerCase();
+    const entry = counts.get(key);
+    if (entry) entry.count += 1;
+    else counts.set(key, { name, count: 1 });
+  }
+  return [...counts.values()].sort((a, b) => b.count - a.count).map((c) => c.name);
+}
+
 export function EventFormScreen({ route, navigation }: Props) {
   const existing = route.params?.event;
   const isEditing = !!existing;
@@ -47,15 +67,34 @@ export function EventFormScreen({ route, navigation }: Props) {
   const [attendance, setAttendance] = useState(existing?.attendance_count != null ? String(existing.attendance_count) : "");
   const [excluded, setExcluded] = useState(existing?.status === "excluded");
   const [studios, setStudios] = useState<Studio[]>([]);
+  const [pastNames, setPastNames] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     navigation.setOptions({ title: isEditing ? "Edit class" : "New class" });
     listStudios().then(setStudios).catch(() => {});
+    listEvents()
+      .then((events) => setPastNames(pastClassNames(events)))
+      .catch(() => {});
   }, [isEditing, navigation]);
 
   const studio = studios.find((s) => s.id === studioId);
+
+  const suggestions = useMemo(() => {
+    const query = title.trim().toLowerCase();
+    return pastNames
+      .filter((name) => name.toLowerCase() !== query && (!query || name.toLowerCase().includes(query)))
+      .slice(0, 8);
+  }, [pastNames, title]);
+
+  // Moving the start keeps the class length, so a new class (1h by default)
+  // starting at 14:00 ends at 15:00 without touching the end picker.
+  function handleStartChange(next: Date) {
+    const length = minutesOfDay(end) - minutesOfDay(start);
+    setStart(next);
+    setEnd(new Date(next.getTime() + (length > 0 ? length : 60) * 60 * 1000));
+  }
 
   async function handleSave() {
     if (!title.trim()) return setError("Give the class a title.");
@@ -115,6 +154,23 @@ export function EventFormScreen({ route, navigation }: Props) {
     <StackScreen footer={<Button title={isEditing ? "Save changes" : "Add class"} onPress={handleSave} loading={saving} />}>
       {error && <Banner message={error} />}
       <Field label="Class name" value={title} onChangeText={setTitle} placeholder="e.g. Reformer Flow" />
+      {suggestions.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          style={styles.suggestions}
+          contentContainerStyle={styles.suggestionsContent}
+        >
+          {suggestions.map((name) => (
+            <TouchableOpacity key={name} style={styles.suggestion} onPress={() => setTitle(name)} activeOpacity={0.7}>
+              <Text style={styles.suggestionText} numberOfLines={1}>
+                {name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
       <SelectSheet
         label="Studio"
         value={studioId}
@@ -126,7 +182,7 @@ export function EventFormScreen({ route, navigation }: Props) {
       <DateTimeField label="Date" mode="date" value={day} onChange={setDay} />
       <View style={{ flexDirection: "row", gap: 10 }}>
         <View style={{ flex: 1 }}>
-          <DateTimeField label="Start" mode="time" value={start} onChange={setStart} />
+          <DateTimeField label="Start" mode="time" value={start} onChange={handleStartChange} />
         </View>
         <View style={{ flex: 1 }}>
           <DateTimeField label="End" mode="time" value={end} onChange={setEnd} />
@@ -167,3 +223,10 @@ export function EventFormScreen({ route, navigation }: Props) {
     </StackScreen>
   );
 }
+
+const styles = StyleSheet.create({
+  suggestions: { marginTop: -4, marginBottom: 12, flexGrow: 0 },
+  suggestionsContent: { gap: 8 },
+  suggestion: { backgroundColor: colors.accentLight, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8, maxWidth: 220 },
+  suggestionText: { fontSize: 13, fontWeight: "600", color: colors.accent },
+});
