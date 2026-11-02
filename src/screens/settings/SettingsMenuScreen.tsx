@@ -3,7 +3,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { SettingsStackParamList } from "../../navigation/settings-types";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
-import { deleteAccount } from "../../lib/api/account";
+import { confirmDeleteAccount } from "../../lib/delete-account";
 import { Avatar, Card, ListRow, Screen, ScreenHeader, SectionLabel, initials } from "../../components/ui";
 import { colors } from "../../theme/colors";
 
@@ -24,33 +24,7 @@ export function SettingsMenuScreen({ navigation }: Props) {
   }
 
   function handleDeleteAccount() {
-    Alert.alert(
-      "Delete your account?",
-      "This permanently deletes your account, studios, classes and invoices, and cancels any active plan. It can't be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete account",
-          style: "destructive",
-          onPress: () =>
-            Alert.alert("Are you sure?", "Your data will be deleted for good.", [
-              { text: "Cancel", style: "cancel" },
-              {
-                text: "Delete forever",
-                style: "destructive",
-                onPress: async () => {
-                  try {
-                    await deleteAccount();
-                    await signOut();
-                  } catch (e) {
-                    Alert.alert("Couldn't delete your account", e instanceof Error ? e.message : "Please try again or contact support.");
-                  }
-                },
-              },
-            ]),
-        },
-      ],
-    );
+    confirmDeleteAccount(signOut);
   }
 
   function handleRerunSetup() {

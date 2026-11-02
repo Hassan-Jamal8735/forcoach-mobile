@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
 import { getBillingStatus, sendPlanInfoEmail } from "../lib/api/billing";
+import { confirmDeleteAccount } from "../lib/delete-account";
 import { BrandLogo } from "../components/BrandLogo";
 import { Banner, Button } from "../components/ui";
 import { colors } from "../theme/colors";
@@ -75,6 +76,9 @@ export function SubscribeScreen({ onAccessGranted }: { onAccessGranted: () => vo
             Log out
           </Text>
         </View>
+        <Text style={[styles.link, styles.deleteLink]} onPress={() => confirmDeleteAccount(signOut)}>
+          Delete account
+        </Text>
       </View>
     </SafeAreaView>
   );
@@ -99,4 +103,5 @@ const styles = StyleSheet.create({
   links: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, paddingVertical: 12 },
   link: { fontSize: 14, fontWeight: "600", color: colors.mutedForeground },
   dot: { color: colors.mutedForeground },
+  deleteLink: { color: colors.destructive, textAlign: "center", paddingBottom: 8 },
 });
